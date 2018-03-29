@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #ifndef MAX
 #define MAX(a, b) ((a)>(b)?(a):(b))
@@ -38,12 +39,13 @@ class BITMAP { public:
 
 void check_im() {
   if (system("identify > null.txt") != 0) {
+  	fprintf(stderr, "system returned value = %d\n", system("identify > null.txt"));
     fprintf(stderr, "ImageMagick must be installed, and 'convert' and 'identify' must be in the path\n"); exit(1);
   }
 }
 
 BITMAP *load_bitmap(const char *filename) {
-  check_im();
+  //check_im();
   char rawname[256], txtname[256];
   strcpy(rawname, filename);
   strcpy(txtname, filename);
@@ -60,12 +62,13 @@ BITMAP *load_bitmap(const char *filename) {
   int w = 0, h = 0;
   if (fscanf(f, "%d %d", &w, &h) != 2) { fprintf(stderr, "Error reading image '%s': could not get size from ImageMagick identify\n", filename); exit(1); }
   fclose(f);
+  printf("(w, h) = (%d, %d)\n", w, h);
   f = fopen(rawname, "rb");
   BITMAP *ans = new BITMAP(w, h);
   unsigned char *p = (unsigned char *) ans->data;
   for (int i = 0; i < w*h*4; i++) {
     int ch = fgetc(f);
-    if (ch == EOF) { fprintf(stderr, "Error reading image '%s': raw file is smaller than expected size %dx%dx4\n", filename, w, h, 4); exit(1); }
+    if (ch == EOF) { fprintf(stderr, "Error reading image '%s': raw file is smaller than expected size %dx%dx%d\n", filename, w, h, 4); exit(1); }
     *p++ = ch;
   }
   fclose(f);
@@ -73,12 +76,13 @@ BITMAP *load_bitmap(const char *filename) {
 }
 
 void save_bitmap(BITMAP *bmp, const char *filename) {
-  check_im();
+  //check_im();
   char rawname[256];
   strcpy(rawname, filename);
   if (!strstr(rawname, ".")) { fprintf(stderr, "Error writing image '%s': no extension found\n", filename); exit(1); }
   sprintf(strstr(rawname, "."), ".raw");
   char buf[256];
+  //printf("rawname = %s\n", rawname);
   FILE *f = fopen(rawname, "wb");
   if (!f) { fprintf(stderr, "Error writing image '%s': could not open raw temporary file\n", filename); exit(1); }
   unsigned char *p = (unsigned char *) bmp->data;
@@ -87,6 +91,7 @@ void save_bitmap(BITMAP *bmp, const char *filename) {
   }
   fclose(f);
   sprintf(buf, "convert -size %dx%d -depth 8 rgba:%s %s", bmp->w, bmp->h, rawname, filename);
+  //printf("system returned value = %d\n", system(buf));
   if (system(buf) != 0) { fprintf(stderr, "Error writing image '%s': ImageMagick convert gave an error\n", filename); exit(1); }
 }
 
@@ -96,7 +101,7 @@ void save_bitmap(BITMAP *bmp, const char *filename) {
 
 int patch_w  = 7;
 int pm_iters = 5;
-int rs_max   = INT_MAX;
+int rs_max   = INT_MAX; // random search
 
 #define XY_TO_INT(x, y) (((y)<<12)|(x))
 #define INT_TO_X(v) ((v)&((1<<12)-1))
@@ -140,6 +145,11 @@ void patchmatch(BITMAP *a, BITMAP *b, BITMAP *&ann, BITMAP *&annd) {
   int bew = b->w - patch_w+1, beh = b->h - patch_w + 1;
   memset(ann->data, 0, sizeof(int)*a->w*a->h);
   memset(annd->data, 0, sizeof(int)*a->w*a->h);
+
+  //save_bitmap(ann, "ann_before.jpg");
+  //save_bitmap(annd, "annd_before.jpg");
+
+  // Initialization
   for (int ay = 0; ay < aeh; ay++) {
     for (int ax = 0; ax < aew; ax++) {
       int bx = rand()%bew;
@@ -148,7 +158,9 @@ void patchmatch(BITMAP *a, BITMAP *b, BITMAP *&ann, BITMAP *&annd) {
       (*annd)[ay][ax] = dist(a, b, ax, ay, bx, by);
     }
   }
+
   for (int iter = 0; iter < pm_iters; iter++) {
+  	printf("iter = %d\n", iter);
     /* In each iteration, improve the NNF, by looping in scanline or reverse-scanline order. */
     int ystart = 0, yend = aeh, ychange = 1;
     int xstart = 0, xend = aew, xchange = 1;
@@ -199,20 +211,42 @@ void patchmatch(BITMAP *a, BITMAP *b, BITMAP *&ann, BITMAP *&annd) {
   }
 }
 
+void reconstruct(BITMAP *a, BITMAP *b, BITMAP *&ann, BITMAP *&r) {
+  r = new BITMAP(a->w, a->h);
+  memset(r->data, 0, sizeof(int)*a->w*a->h);
+
+  for (int h = 0; h < a->h; h++)
+  {
+  	for (int w = 0; w < a->w; w++)
+  	{
+	  int v = (*ann)[h][w];
+      int xbest = INT_TO_X(v), ybest = INT_TO_Y(v);
+      (*r)[h][w] = (*b)[ybest][xbest];
+  	}
+  }
+}
+
 int main(int argc, char *argv[]) {
   argc--;
   argv++;
   if (argc != 4) { fprintf(stderr, "pm_minimal a b ann annd\n"
                                    "Given input images a, b outputs nearest neighbor field 'ann' mapping a => b coords, and the squared L2 distance 'annd'\n"
                                    "These are stored as RGB 24-bit images, with a 24-bit int at every pixel. For the NNF we store (by<<12)|bx."); exit(1); }
-  printf("Loading input images\n");
+  printf("(1) Loading input images\n");
   BITMAP *a = load_bitmap(argv[0]);
   BITMAP *b = load_bitmap(argv[1]);
   BITMAP *ann = NULL, *annd = NULL;
-  printf("Running PatchMatch\n");
+  printf("\n(2) Running PatchMatch\n");
   patchmatch(a, b, ann, annd);
-  printf("Saving output images\n");
+  printf("\n(3) Saving output images: ann & annd\n");
   save_bitmap(ann, argv[2]);
   save_bitmap(annd, argv[3]);
+
+  // Reconstruct image based on ann
+  printf("\n(4) Reconstructibg an image for the source image\n");
+  BITMAP *r = NULL;
+  reconstruct(a, b, ann, r);
+  save_bitmap(r, "a_restructed.jpg");
+
   return 0;
 }
