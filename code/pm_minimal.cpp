@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #ifndef MAX
 #define MAX(a, b) ((a)>(b)?(a):(b))
@@ -37,7 +38,10 @@ class BITMAP { public:
 };
 
 void check_im() {
-  if (system("identify > null.txt") != 0) {
+  int i;
+  i = system("identify ../test-images/test1.jpg");
+  printf ("The value returned was: %d.\n",i);
+  if (i != 0) {
     fprintf(stderr, "ImageMagick must be installed, and 'convert' and 'identify' must be in the path\n"); exit(1);
   }
 }
@@ -65,7 +69,7 @@ BITMAP *load_bitmap(const char *filename) {
   unsigned char *p = (unsigned char *) ans->data;
   for (int i = 0; i < w*h*4; i++) {
     int ch = fgetc(f);
-    if (ch == EOF) { fprintf(stderr, "Error reading image '%s': raw file is smaller than expected size %dx%dx4\n", filename, w, h, 4); exit(1); }
+    if (ch == EOF) { fprintf(stderr, "Error reading image '%s': raw file is smaller than expected size %dx%dx%d\n", filename, w, h, 4); exit(1); }
     *p++ = ch;
   }
   fclose(f);
