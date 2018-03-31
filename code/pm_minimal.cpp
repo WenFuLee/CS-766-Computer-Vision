@@ -228,6 +228,7 @@ void reconstruct(BITMAP *a, BITMAP *b, BITMAP *ann, BITMAP *&r) {
   }
 }
 
+
 int main(int argc, char *argv[]) {
   argc--;
   argv++;
