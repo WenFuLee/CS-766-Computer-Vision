@@ -112,10 +112,10 @@ int rs_max   = INT_MAX; // random search
 int dist(BITMAP *a, BITMAP *b, int ax, int ay, int bx, int by, int cutoff=INT_MAX) {
   int ans = 0;
   for (int dy = 0; dy < patch_w; dy++) {
-    int *arow = &(*a)[ay+dy][ax];
+    int *arow = &(*a)[ay+dy/2][ax];
     int *brow = &(*b)[by+dy][bx];
     for (int dx = 0; dx < patch_w; dx++) {
-      int ac = arow[dx];
+      int ac = arow[dx/2];
       int bc = brow[dx];
       int dr = (ac&255)-(bc&255);
       int dg = ((ac>>8)&255)-((bc>>8)&255);
@@ -229,7 +229,7 @@ void reconstruct(BITMAP *a, BITMAP *b, BITMAP *&ann, BITMAP *&r) {
 int main(int argc, char *argv[]) {
   argc--;
   argv++;
-  if (argc != 4) { fprintf(stderr, "pm_minimal a b ann annd\n"
+  if (argc != 2) { fprintf(stderr, "pm_minimal a b ann annd\n"
                                    "Given input images a, b outputs nearest neighbor field 'ann' mapping a => b coords, and the squared L2 distance 'annd'\n"
                                    "These are stored as RGB 24-bit images, with a 24-bit int at every pixel. For the NNF we store (by<<12)|bx."); exit(1); }
   printf("(1) Loading input images\n");
@@ -239,8 +239,8 @@ int main(int argc, char *argv[]) {
   printf("\n(2) Running PatchMatch\n");
   patchmatch(a, b, ann, annd);
   printf("\n(3) Saving output images: ann & annd\n");
-  save_bitmap(ann, argv[2]);
-  save_bitmap(annd, argv[3]);
+  //save_bitmap(ann, argv[2]);
+  //save_bitmap(annd, argv[3]);
 
   // Reconstruct image based on ann
   printf("\n(4) Reconstructibg an image for the source image\n");
