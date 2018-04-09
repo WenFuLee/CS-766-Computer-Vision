@@ -116,8 +116,8 @@ void save_bitmap(BITMAP *bmp, const char *filename) {
    PatchMatch, using L2 distance between upright patches that translate only
    ------------------------------------------------------------------------- */
 
-int patch_w  = 10;
-int pm_iters = 10;
+int patch_w  = 7;
+int pm_iters = 6;
 int rs_max   = INT_MAX; // random search
 
 #define XY_TO_INT(x, y) (((y)<<12)|(x))
@@ -147,17 +147,10 @@ bool inBox(int x, int y, int box_xmin, int box_xmax, int box_ymin, int box_ymax)
    You could implement your own descriptor here. */
 int dist(BITMAP *a, BITMAP *b, int ax, int ay, int bx, int by, BITMAP *mask, int cutoff=INT_MAX) {
   int ans = 0;
-  int holeCount = 0;
-  if (isHole(mask, ax, ay) && isHole(mask, ax+patch_w-1, ay+patch_w-1)) { return INT_MAX; }
   for (int dy = 0; dy < patch_w; dy++) {
     int *arow = &(*a)[ay+dy][ax];
     int *brow = &(*b)[by+dy][bx];
     for (int dx = 0; dx < patch_w; dx++) {
-      if (isHole(mask, ax+dx, ay+dy)) {
-        holeCount += 1;
-        continue;
-      }
-      assert(!isHole(mask, bx+dx, by+dy));
       int ac = arow[dx];
       int bc = brow[dx];
       int dr = (ac&255)-(bc&255);
@@ -167,8 +160,6 @@ int dist(BITMAP *a, BITMAP *b, int ax, int ay, int bx, int by, BITMAP *mask, int
     }
     if (ans >= cutoff) { return cutoff; }
   }
-  double percent = 1 - (double) holeCount / (patch_w*patch_w);
-  ans = (int) (ans / percent);
   if (ans < 0) return INT_MAX;
   return ans;
 }
@@ -184,11 +175,6 @@ void improve_guess(BITMAP *a, BITMAP *b, int ax, int ay, int &xbest, int &ybest,
       else
         printf("  Random: improve (%d, %d) old nn (%d, %d) new nn (%d, %d) old dist %d, new dist %d\n", ax, ay, xbest, ybest, bx, by, dbest, d);
 #endif
-    if (isHole(mask, ax, ay) && d == 0) {
-      printf("  try improve (%d, %d) old dist %d new dist %d\n", ax, ay, dbest, d);
-      printf("  try improve (%d, %d) old nn (%d, %d) new nn (%d, %d)\n", ax, ay, xbest, ybest, bx, by);
-      return;
-    }
     dbest = d;
     xbest = bx;
     ybest = by;
@@ -227,7 +213,7 @@ void getBox(BITMAP *mask, int& xmin, int& xmax, int& ymin, int& ymax) {
   printf("Hole's bounding box is x (%d, %d), y (%d, %d)\n", xmin, xmax, ymin, ymax);
 }
 
-BITMAP *norm_image(double *accum, int w, int h, BITMAP *ainit=NULL, BITMAP *mask=NULL) {
+BITMAP *norm_image(double *accum, int w, int h, BITMAP *ainit=NULL) {
   BITMAP *ans = new BITMAP(w, h);
   for (int y = 0; y < h; y++) {
     int *row = (*ans)[y];
@@ -243,8 +229,6 @@ BITMAP *norm_image(double *accum, int w, int h, BITMAP *ainit=NULL, BITMAP *mask
         row[x] = p[3] ? int((p[0]+c2)/c)|(int((p[1]+c2)/c)<<8)|(int((p[2]+c2)/c)<<16)|(255<<24) : arow[x];
       else
         row[x] = int((p[0]+c2)/c)|(int((p[1]+c2)/c)<<8)|(int((p[2]+c2)/c)<<16)|(255<<24);
-      //if (mask && p[3] && isHole(mask, x, y))
-      //  (*mask)[y][x] = 0;
     }
   }
   return ans;
@@ -266,11 +250,6 @@ void patchmatch(BITMAP *a, BITMAP *mask, BITMAP *&ans, BITMAP *&ann, BITMAP *&an
   box_xmax = box_ymax = 0;
 
   getBox(mask, box_xmin, box_xmax, box_ymin, box_ymax);
-
-  // store original mask
-  BITMAP *ori_mask = new BITMAP(mask);
-  
-  save_bitmap(ori_mask, "orimask.jpg");
 
   int bx, by;
   // Initialization
@@ -299,18 +278,10 @@ void patchmatch(BITMAP *a, BITMAP *mask, BITMAP *&ans, BITMAP *&ann, BITMAP *&an
   save_bitmap(ann, "ann_before.jpg");
   save_bitmap(annd, "annd_before.jpg");
   save_bitmap(mask, "mask_before.jpg");
-  //save_bitmap(a, "a_img_completion_initial.jpg");
 
   // in each iter we have two mask, the old one and updated new one
   int w = 1;
   for (int iter = 0; iter < pm_iters; iter++) {
-    // to store pixels in the new patch
-    int sz = a->w*a->h; sz = sz << 2; // 4*w*h
-    double* accum = new double[sz];
-    memset(accum, 0, sizeof(double)*sz );
-
-    BITMAP *new_mask = new BITMAP(mask);
-
     printf("iter = %d\n", iter);
     /* In each iteration, improve the NNF, by looping in scanline or reverse-scanline order. */
     int ystart = box_ymin, yend = box_ymax, ychange = 1;
@@ -321,11 +292,6 @@ void patchmatch(BITMAP *a, BITMAP *mask, BITMAP *&ans, BITMAP *&ann, BITMAP *&an
     }
     for (int ay = ystart; ay != yend; ay += ychange) {
       for (int ax = xstart; ax != xend; ax += xchange) { 
-
-        if (isHole(mask, ax, ay) && isHole(mask, ax + patch_w - 1, ay + patch_w - 1)) {
-          continue;
-        }
-
         /* Current (best) guess. */
         int v = (*ann)[ay][ax];
         int xbest = INT_TO_X(v), ybest = INT_TO_Y(v);
@@ -371,104 +337,59 @@ void patchmatch(BITMAP *a, BITMAP *mask, BITMAP *&ans, BITMAP *&ann, BITMAP *&an
 
         (*ann)[ay][ax] = XY_TO_INT(xbest, ybest);
         (*annd)[ay][ax] = dbest;
-        //if (isHole(mask, ax, ay))
-        //  (*a)[ay][ax] = (*a)[ybest][xbest];
-
-        // fill pixels
-        /*
-        for (int dy = 0; dy < patch_w; dy++) {
-          int* arow = (*a)[ay+dy] + ax;
-          int* best_row = (*a)[ybest+dy] + xbest;
-          for(int dx = 0; dx < patch_w; dx++) {
-            if (!isHole(mask, ax+dx, ay+dy)) { continue; }
-            arow[dx] = best_row[dx];
-          }
-        }
-        */
       }
     }
-
-    
-    // fill in missing pixels
-    for (int ay = box_ymin; ay < box_ymax; ay++) {
-      for (int ax = box_xmin; ax < box_xmax; ax++) {
-
-        if (isHole(mask, ax, ay) && isHole(mask, ax + patch_w - 1, ay + patch_w - 1)) {
-          continue;
-        }
-
-        int vp = (*ann)[ay][ax];
-        int xp = INT_TO_X(vp), yp = INT_TO_Y(vp);
-        for (int dy = 0; dy < patch_w; dy++) {
-          int* arow = (*a)[yp+dy] + xp;
-          double* prow = &accum[4*((ay+dy)*a->w + ax)];
-          for(int dx = 0; dx < patch_w; dx++) {
-            if ((*annd)[yp+dy][xp+dx] == INT_MAX) { continue; }
-            int c = arow[dx];
-            double* p = &prow[4*dx];
-            p[0] += (c&255)*w;
-            p[1] += ((c>>8)&255)*w;
-            p[2] += ((c>>16)&255)*w;
-            p[3] += w;
-            // change mask
-            (*new_mask)[ay+dy][ax+dx] = 0;
-          }
-        }
-      }
-    } 
-    
-
-    ans = norm_image(accum, a->w, a->h, NULL, mask);
-
-    save_bitmap(ans, "ans.jpg");
-   
-    // join with original picture
-    for (int h = 0; h < a->h; h++) {
-      for (int w = 0; w < a->w; w++) {
-        if (!isHole(ori_mask, w, h)) {
-        // if (!inBox(w, h, box_xmin, box_xmax, box_ymin, box_ymax)) {
-          (*ans)[h][w] = 0 | (*a)[h][w];
-        }
-      }
-    }
-
-    delete a;
-    a = ans;
-
-    // update distance (annd)
-    for (int ay = box_ymin; ay < box_ymax; ay++) {
-      for (int ax = box_xmin; ax < box_xmax; ax++) {
-        int vp = (*ann)[ay][ax];
-        int bx = INT_TO_X(vp), by = INT_TO_Y(vp);
-        (*annd)[ay][ax] = dist(a, a, ax, ay, bx, by, mask);
-      }
-    }
-
 
     std::stringstream ss;
     ss << iter;
-    std::string a_file = "a_iter_" + ss.str() + ".jpg";
-    const char* a_ptr = a_file.c_str();
-    save_bitmap(a, a_ptr);
 
     std::string annd_file = "annd_iter_" + ss.str() + ".jpg";
     const char* annd_ptr = annd_file.c_str();
     save_bitmap(annd, annd_ptr);
-
     
-    std::string mask_file = "mask_iter_" + ss.str() + ".jpg";
-    const char* mask_ptr = mask_file.c_str();
-    save_bitmap(mask, mask_ptr);
-    
-
-    delete mask;
-    mask = new_mask;
-    delete[] accum;
   } 
 
-  save_bitmap(a, "a_final.jpg");
-  save_bitmap(ann, "ann_after.jpg");
-  save_bitmap(annd, "annd_after.jpg");
+  // to store pixels in the new patch
+  int sz = a->w*a->h; sz = sz << 2; // 4*w*h
+  double* accum = new double[sz];
+  memset(accum, 0, sizeof(double)*sz );
+
+  // fill in missing pixels
+  for (int ay = box_ymin; ay < box_ymax; ay++) {
+    for (int ax = box_xmin; ax < box_xmax; ax++) {
+      int vp = (*ann)[ay][ax];
+      int xp = INT_TO_X(vp), yp = INT_TO_Y(vp);
+      for (int dy = 0; dy < patch_w; dy++) {
+        int* arow = (*a)[yp+dy] + xp;
+        double* prow = &accum[4*((ay+dy)*a->w + ax)];
+        for(int dx = 0; dx < patch_w; dx++) {
+          if ((*annd)[yp+dy][xp+dx] == INT_MAX) { continue; }
+          int c = arow[dx];
+          double* p = &prow[4*dx];
+          p[0] += (c&255)*w;
+          p[1] += ((c>>8)&255)*w;
+          p[2] += ((c>>16)&255)*w;
+          p[3] += w;
+        }
+      }
+    }
+  } 
+  ans = norm_image(accum, a->w, a->h, NULL);
+  delete[] accum;
+
+  // join with original picture
+  for (int h = 0; h < a->h; h++) {
+    for (int w = 0; w < a->w; w++) {
+      if (!isHole(mask, w, h)) {
+        (*ans)[h][w] = 0 | (*a)[h][w];
+      }
+    }
+  }
+  
+  save_bitmap(ans, "final_picture.jpg");
+
+  save_bitmap(ann, "ann_final.jpg");
+  save_bitmap(annd, "annd_final.jpg");
   
   
 }
@@ -505,7 +426,7 @@ void tryIt(BITMAP* a, BITMAP *&ans, BITMAP *mask) {
         }
       }
     } 
-    ans = norm_image(accum, a->w, a->h, a, mask);
+    ans = norm_image(accum, a->w, a->h, a);
     save_bitmap(ans, "try_ans.jpg");
 
     // join with original picture
