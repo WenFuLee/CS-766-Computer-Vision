@@ -18,7 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <limits.h>
+#include <sstream>
 
 #ifndef MAX
 #define MAX(a, b) ((a)>(b)?(a):(b))
@@ -102,12 +104,15 @@ void save_bitmap(BITMAP *bmp, const char *filename) {
    ------------------------------------------------------------------------- */
 
 int patch_w  = 7;
-int pm_iters = 5;
+int pm_iters = 1;
 int rs_max   = INT_MAX; // random search
 
 #define XY_TO_INT(x, y) (((y)<<12)|(x))
 #define INT_TO_X(v) ((v)&((1<<12)-1))
 #define INT_TO_Y(v) ((v)>>12)
+
+
+void reconstruct(BITMAP *a, BITMAP *b, BITMAP *ann, BITMAP *&ans);
 
 /* Measure distance between 2 patches with upper left corners (ax, ay) and (bx, by), terminating early if we exceed a cutoff distance.
    You could implement your own descriptor here. */
@@ -210,22 +215,66 @@ void patchmatch(BITMAP *a, BITMAP *b, BITMAP *&ann, BITMAP *&annd) {
         (*annd)[ay][ax] = dbest;
       }
     }
+
+    // try to reconstruct at every iter
+    /*
+    BITMAP *r = NULL;
+    reconstruct(a, b, ann, r);
+    std::stringstream ss;
+    ss << iter;
+    std::string r_file = "a_recons_iter_" + ss.str() + ".jpg";
+    const char* r_ptr = r_file.c_str();
+    save_bitmap(r, r_ptr);
+    */
   }
 }
 
-void reconstruct(BITMAP *a, BITMAP *b, BITMAP *ann, BITMAP *&r) {
-  r = new BITMAP(a->w, a->h);
-  memset(r->data, 0, sizeof(int)*a->w*a->h);
-
-  for (int h = 0; h < a->h; h++)
-  {
-  	for (int w = 0; w < a->w; w++)
-  	{
-	  int v = (*ann)[h][w];
-      int xbest = INT_TO_X(v), ybest = INT_TO_Y(v);
-      (*r)[h][w] = (*b)[ybest][xbest];
-  	}
+BITMAP *norm_image(double *accum, int w, int h, BITMAP *ainit=NULL) {
+  BITMAP *ans = new BITMAP(w, h);
+  for (int y = 0; y < h; y++) {
+    int *row = (*ans)[y];
+    int *arow = NULL;
+    if (ainit)
+      arow = (*ainit)[y];
+    double *prow = &accum[4*(y*w)];
+    for (int x = 0; x < w; x++) {
+      double *p = &prow[4*x];
+      int c = p[3] ? p[3]: 1;
+      int c2 = c>>1;             /* Changed: round() instead of floor. */
+      if (ainit)
+        row[x] = p[3] ? int((p[0]+c2)/c)|(int((p[1]+c2)/c)<<8)|(int((p[2]+c2)/c)<<16)|(255<<24) : arow[x];
+      else
+        row[x] = int((p[0]+c2)/c)|(int((p[1]+c2)/c)<<8)|(int((p[2]+c2)/c)<<16)|(255<<24);
+    }
   }
+  return ans;
+}
+
+void reconstruct(BITMAP *a, BITMAP *b, BITMAP *ann, BITMAP *&ans) {
+
+  int sz = a->w*a->h; sz = sz << 2; // 4*w*h
+  double* accum = new double[sz];
+  memset(accum, 0, sizeof(double)*sz );
+
+  for (int ay = 0; ay < a->h - patch_w + 1; ay++) {
+    for (int ax = 0; ax < a->w - patch_w + 1; ax++) {
+      int vp = (*ann)[ay][ax];
+      int xp = INT_TO_X(vp), yp = INT_TO_Y(vp);
+      for (int dy = 0; dy < patch_w; dy++) {
+        int* brow = (*b)[yp+dy] + xp;
+        double* prow = &accum[4*((ay+dy)*a->w + ax)];
+        for(int dx = 0; dx < patch_w; dx++) {
+          int c = brow[dx];
+          double* p = &prow[4*dx];
+          p[0] += (c&255);
+          p[1] += ((c>>8)&255);
+          p[2] += ((c>>16)&255);
+          p[3] += 1;
+        }
+      }
+    }
+  }
+  ans = norm_image(accum, a->w, a->h, NULL);
 }
 
 

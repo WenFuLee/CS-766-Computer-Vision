@@ -7,4 +7,4 @@ comp: im_complete.cpp
 	$(CC) -o im im_complete.cpp $(CFLAGS)
 
 clean:
-	rm -rf *.jpg *.raw im pm
+	rm -rf *.jpg *.raw *.bmp *.png im pm
