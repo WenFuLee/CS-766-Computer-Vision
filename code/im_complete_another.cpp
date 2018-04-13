@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <sstream>
 #include <assert.h>
+#include <math.h>
 
 #include <iostream>
 
@@ -164,8 +165,8 @@ void save_bitmap(BITMAP *bmp, const char *filename)
    ------------------------------------------------------------------------- */
 
 int patch_w = 7;
-int pm_iters = 6;
-int im_iters = 10;
+int pm_iters = 5;
+int im_iters = 8;
 int rs_max = INT_MAX; // random search
 
 #define XY_TO_INT(x, y) (((y) << 12) | (x))
@@ -380,7 +381,6 @@ void patchmatch(BITMAP *a, BITMAP *mask, BITMAP *&ans, BITMAP *&ann, BITMAP *&an
   save_bitmap(mask, "mask_before.jpg");
 
   // in each im iter we have two mask, the old one and updated new one
-  int w = 1;
   for (int out_iter = 0; out_iter < im_iters; out_iter++)
   {
     printf("im iter = %d\n", out_iter);
@@ -495,12 +495,13 @@ void patchmatch(BITMAP *a, BITMAP *mask, BITMAP *&ans, BITMAP *&ann, BITMAP *&an
             {
               continue;
             }
+            double sim_score = exp(-1*(*annd)[yp + dy][xp + dx]);
             int c = arow[dx];
             double *p = &prow[4 * dx];
-            p[0] += (c & 255) * w;
-            p[1] += ((c >> 8) & 255) * w;
-            p[2] += ((c >> 16) & 255) * w;
-            p[3] += w;
+            p[0] += (c & 255) * sim_score;
+            p[1] += ((c >> 8) & 255) * sim_score;
+            p[2] += ((c >> 16) & 255) * sim_score;
+            p[3] += sim_score;
             // change mask
             (*new_mask)[ay + dy][ax + dx] = 0;
           }

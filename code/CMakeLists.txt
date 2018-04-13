@@ -1,0 +1,6 @@
+SET(OpenCV_DIR ~/opencv-3.4.1/build)
+cmake_minimum_required(VERSION 2.8) 
+project( ImageComplete )
+find_package( OpenCV REQUIRED ) 
+add_executable( ImageComplete im_complete_opencv.cpp ) 
+target_link_libraries( ImageComplete ${OpenCV_LIBS} ) 
