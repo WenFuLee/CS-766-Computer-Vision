@@ -31,9 +31,10 @@
 #define MIN(a, b) ((a)<(b)?(a):(b))
 #endif
 
-#define DEBUG
+#define _DEBUG
 
 using namespace cv;
+using namespace std;
 
 /* -------------------------------------------------------------------------
    BITMAP: Minimal image class
@@ -105,14 +106,19 @@ void save_bitmap(BITMAP *bmp, const char *filename) {
   if (system(buf) != 0) { fprintf(stderr, "Error writing image '%s': ImageMagick convert gave an error\n", filename); exit(1); }
 }
 
+// Just a simple struct for Box
+struct Box {
+  int xmin, xmax, ymin, ymax;
+};
 
 /* -------------------------------------------------------------------------
    PatchMatch, using L2 distance between upright patches that translate only
    ------------------------------------------------------------------------- */
 
-int patch_w  = 7;
-int pm_iters = 1;
+int patch_w  = 8;
+int pm_iters = 5;
 int rs_max   = INT_MAX; // random search
+int sigma = 5 * patch_w * patch_w;
 
 #define XY_TO_INT(x, y) (((y)<<12)|(x))
 #define INT_TO_X(v) ((v)&((1<<12)-1))
@@ -130,8 +136,8 @@ bool isHole(BITMAP *mask, int x, int y) {
 }
 
 /* check if a pixel x, y is in the bounding box or not */
-bool inBox(int x, int y, int box_xmin, int box_xmax, int box_ymin, int box_ymax) {
-  if (x >= box_xmin && x <= box_xmax+patch_w && y >= box_ymin && y <= box_ymax+patch_w) {
+bool inBox(int x, int y, Box box) {
+  if (x >= box.xmin && x <= box.xmax+patch_w && y >= box.ymin && y <= box.ymax+patch_w) {
     return true;
   }
   return false;
@@ -139,17 +145,20 @@ bool inBox(int x, int y, int box_xmin, int box_xmax, int box_ymin, int box_ymax)
 
 /* Measure distance between 2 patches with upper left corners (ax, ay) and (bx, by), terminating early if we exceed a cutoff distance.
    You could implement your own descriptor here. */
-int dist(BITMAP *a, BITMAP *b, int ax, int ay, int bx, int by, BITMAP *mask, int cutoff=INT_MAX) {
+int dist(Mat a, Mat b, int ax, int ay, int bx, int by, int cutoff=INT_MAX) {
   int ans = 0;
+  if (a.type() != CV_8UC3) {
+    cout << "Bad things happened in dist " <<endl;
+    exit(1);
+  }
   for (int dy = 0; dy < patch_w; dy++) {
-    int *arow = &(*a)[ay+dy][ax];
-    int *brow = &(*b)[by+dy][bx];
     for (int dx = 0; dx < patch_w; dx++) {
-      int ac = arow[dx];
-      int bc = brow[dx];
-      int dr = (ac&255)-(bc&255);
-      int dg = ((ac>>8)&255)-((bc>>8)&255);
-      int db = (ac>>16)-(bc>>16);
+      Vec3b ac = a.at<Vec3b>(ay + dy, ax + dx);
+      Vec3b bc = b.at<Vec3b>(by + dy, bx + dx);
+
+      int db = ac[0] - bc[0];
+      int dg = ac[1] - bc[1];
+      int dr = ac[2] - bc[2];
       ans += dr*dr + dg*dg + db*db;
     }
     if (ans >= cutoff) { return cutoff; }
@@ -158,8 +167,8 @@ int dist(BITMAP *a, BITMAP *b, int ax, int ay, int bx, int by, BITMAP *mask, int
   return ans;
 }
 
-void improve_guess(BITMAP *a, BITMAP *b, int ax, int ay, int &xbest, int &ybest, int &dbest, int bx, int by, BITMAP *mask, int type) {
-  int d = dist(a, b, ax, ay, bx, by, mask, dbest);
+void improve_guess(Mat a, Mat b, int ax, int ay, int &xbest, int &ybest, int &dbest, int bx, int by, int type) {
+  int d = dist(a, b, ax, ay, bx, by, dbest);
   if ((d < dbest) && (ax != bx || ay != by) ) {
 #ifdef DEBUG
       if (type == 0)
@@ -176,15 +185,14 @@ void improve_guess(BITMAP *a, BITMAP *b, int ax, int ay, int &xbest, int &ybest,
 }
 
 /* Get the bounding box of hole */
-void getBox(BITMAP *mask, int& xmin, int& xmax, int& ymin, int& ymax) {
-  for (int h = 0; h < mask->h; h++) {
-    for (int w = 0; w < mask->w; w++) {
-      int c = (*mask)[h][w];
-      int r = c&255;
-      int g = (c>>8)&255;
-      int b = (c>>16)&255;
+Box getBox(Mat mask) {
+  int xmin = INT_MAX, ymin = INT_MAX;
+  int xmax = 0, ymax = 0;
+  for (int h = 0; h < mask.rows; h++) {
+    for (int w = 0; w < mask.cols; w++) {
+      Vec3b mask_pixel = mask.at<Vec3b>(h, w);
       // hole means non-black pixels in mask
-      if (r != 0 || g != 0 || b != 0) {
+      if (!(mask_pixel[0] == 0 && mask_pixel[1] == 0 && mask_pixel[2] == 0)) {
           if (h < ymin)
             ymin = h;
           if (h > ymax)
@@ -201,57 +209,37 @@ void getBox(BITMAP *mask, int& xmin, int& xmax, int& ymin, int& ymax) {
   xmin = (xmin < 0) ? 0 : xmin;
   ymin = (ymin < 0) ? 0 : ymin;
   
-  xmax = (xmax > mask->w - patch_w + 1) ? mask->w - patch_w +1 : xmax;
-  ymax = (ymax > mask->h - patch_w + 1) ? mask->h - patch_w +1 : ymax;
+  xmax = (xmax > mask.cols - patch_w + 1) ? mask.cols - patch_w +1 : xmax;
+  ymax = (ymax > mask.rows - patch_w + 1) ? mask.rows - patch_w +1 : ymax;
 
   printf("Hole's bounding box is x (%d, %d), y (%d, %d)\n", xmin, xmax, ymin, ymax);
-}
-
-BITMAP *norm_image(double *accum, int w, int h, BITMAP *ainit=NULL) {
-  BITMAP *ans = new BITMAP(w, h);
-  for (int y = 0; y < h; y++) {
-    int *row = (*ans)[y];
-    int *arow = NULL;
-    if (ainit)
-      arow = (*ainit)[y];
-    double *prow = &accum[4*(y*w)];
-    for (int x = 0; x < w; x++) {
-      double *p = &prow[4*x];
-      int c = p[3] ? p[3]: 1;
-      int c2 = c>>1;             /* Changed: round() instead of floor. */
-      if (ainit)
-        row[x] = p[3] ? int((p[0]+c2)/c)|(int((p[1]+c2)/c)<<8)|(int((p[2]+c2)/c)<<16)|(255<<24) : arow[x];
-      else
-        row[x] = int((p[0]+c2)/c)|(int((p[1]+c2)/c)<<8)|(int((p[2]+c2)/c)<<16)|(255<<24);
-    }
-  }
-  return ans;
+  Box box = {.xmin = xmin, .xmax = xmax, .ymin = ymin, .ymax = ymax};
+  return box;
 }
 
 /* Match image a to image b, returning the nearest neighbor field mapping a => b coords, stored in an RGB 24-bit image as (by<<12)|bx. */
-void patchmatch(Mat a, Mat mask, Mat &ans, Mat &ann, Mat &annd) {
-  //int aew = a->w - patch_w+1, aeh = a->h - patch_w + 1;       /* Effective width and height (possible upper left corners of patches). */
-  int mew = mask->w - patch_w+1, meh = mask->h - patch_w + 1;
-  memset(ann->data, 0, sizeof(int)*a->w*a->h);
-  memset(annd->data, 0, sizeof(int)*a->w*a->h);
+void patchmatch(Mat a, Mat b, Mat mask, BITMAP *&ann, BITMAP *&annd, Box box) {
+  /* Initialize with random nearest neighbor field (NNF). */
+  ann = new BITMAP(a.cols, a.rows);
+  annd = new BITMAP(a.cols, a.rows);
+   /* Effective width and height (possible upper left corners of patches). */
+  int aew = a.cols - patch_w + 1, aeh = a.rows - patch_w + 1;
+  int bew = b.cols - patch_w + 1, beh = b.rows - patch_w + 1;
+  memset(ann->data, 0, sizeof(int) * a.cols * a.rows);
+  memset(annd->data, 0, sizeof(int) * a.cols * a.rows);
 
-
-  int box_xmin, box_xmax, box_ymin, box_ymax;
-  box_xmin = box_ymin = INT_MAX;
-  box_xmax = box_ymax = 0;
-
-  getBox(mask, box_xmin, box_xmax, box_ymin, box_ymax);
+  int box_xmin = box.xmin, box_xmax = box.xmax, box_ymin = box.ymin, box_ymax = box.ymax;
 
   int bx, by;
   // Initialization
-  for (int ay = box_ymin; ay < box_ymax; ay++) {
-    for (int ax = box_xmin; ax < box_xmax; ax++) {
+  for (int ay = 0; ay < aeh; ay++) {
+    for (int ax = 0; ax < aew; ax++) {
       bool valid = false;
       while (!valid) {
-        bx = rand()%mew;
-        by = rand()%meh;
+        bx = rand() % aew;
+        by = rand() % aeh;
         // should find patches outside bounding box
-        if (inBox(bx, by, box_xmin, box_xmax, box_ymin, box_ymax)) {
+        if (inBox(bx, by, box)) {
         // or outside the hole
         //if (isHole(mask, bx, by) && isHole(mask, bx+patch_w, by+patch_w)) {
           valid = false;
@@ -260,26 +248,18 @@ void patchmatch(Mat a, Mat mask, Mat &ans, Mat &ann, Mat &annd) {
         }
       }
       (*ann)[ay][ax] = XY_TO_INT(bx, by);
-      (*annd)[ay][ax] = dist(a, a, ax, ay, bx, by, mask);
+      (*annd)[ay][ax] = dist(a, b, ax, ay, bx, by);
     }
   }
 
-
-
-  save_bitmap(ann, "ann_before.jpg");
-  save_bitmap(annd, "annd_before.jpg");
-  save_bitmap(mask, "mask_before.jpg");
-
-  // in each iter we have two mask, the old one and updated new one
-  int w = 1;
   for (int iter = 0; iter < pm_iters; iter++) {
-    printf("iter = %d\n", iter);
+    printf("  pm_iter = %d\n", iter);
     /* In each iteration, improve the NNF, by looping in scanline or reverse-scanline order. */
-    int ystart = box_ymin, yend = box_ymax, ychange = 1;
-    int xstart = box_xmin, xend = box_xmax, xchange = 1;
+    int ystart = 0, yend = aeh, ychange = 1;
+    int xstart = 0, xend = aew, xchange = 1;
     if (iter % 2 == 1) {
-      xstart = box_xmax-1; xend = box_xmin-1; xchange = -1;
-      ystart = box_ymax-1; yend = box_ymin-1; ychange = -1;
+      xstart = xend-1; xend = -1; xchange = -1;
+      ystart = yend-1; yend = -1; ychange = -1;
     }
     for (int ay = ystart; ay != yend; ay += ychange) {
       for (int ax = xstart; ax != xend; ax += xchange) { 
@@ -289,115 +269,229 @@ void patchmatch(Mat a, Mat mask, Mat &ans, Mat &ann, Mat &annd) {
         int dbest = (*annd)[ay][ax];
 
         /* Propagation: Improve current guess by trying instead correspondences from left and above (below and right on odd iterations). */
-        if ((unsigned) (ax - xchange) < (unsigned) mew) {
-        //if (inBox(ax - xchange, ay, box_xmin, box_xmax, box_ymin, box_ymax)) {
+        if ((unsigned) (ax - xchange) < (unsigned) aew) {
           int vp = (*ann)[ay][ax-xchange];
           int xp = INT_TO_X(vp) + xchange, yp = INT_TO_Y(vp);
-          if (((unsigned) xp < (unsigned) mew) && !inBox(xp, yp, box_xmin, box_xmax, box_ymin, box_ymax)) {
-          //if (((unsigned) xp < (unsigned) mew)) {
-            //printf("Propagation x\n");
-            improve_guess(a, a, ax, ay, xbest, ybest, dbest, xp, yp, mask, 0);
+          if (((unsigned) xp < (unsigned) aew) && !inBox(xp, yp, box)) {
+            improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
           }
         }
 
-        if ((unsigned) (ay - ychange) < (unsigned) meh) {
-        //if (inBox(ax, ay - ychange, box_xmin, box_xmax, box_ymin, box_ymax)) {
+        if ((unsigned) (ay - ychange) < (unsigned) aeh) {
           int vp = (*ann)[ay-ychange][ax];
           int xp = INT_TO_X(vp), yp = INT_TO_Y(vp) + ychange;
-          if (((unsigned) yp < (unsigned) meh) && !inBox(xp, yp, box_xmin, box_xmax, box_ymin, box_ymax)) {
-          //if (((unsigned) yp < (unsigned) meh)) {
-            //printf("Propagation y\n");
-            improve_guess(a, a, ax, ay, xbest, ybest, dbest, xp, yp, mask, 1);
+          if (((unsigned) yp < (unsigned) aeh) && !inBox(xp, yp, box)) {
+            improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
           }
         }
 
         /* Random search: Improve current guess by searching in boxes of exponentially decreasing size around the current best guess. */
         int rs_start = rs_max;
-        if (rs_start > MAX(a->w, a->h)) { rs_start = MAX(a->w, a->h); }
+        if (rs_start > MAX(b.cols, b.rows)) { rs_start = MAX(b.cols, b.rows); }
         for (int mag = rs_start; mag >= 1; mag /= 2) {
           /* Sampling window */
-          int xmin = MAX(xbest-mag, 0), xmax = MIN(xbest+mag+1, mew);
-          int ymin = MAX(ybest-mag, 0), ymax = MIN(ybest+mag+1, meh);
-          int xp = xmin+rand()%(xmax-xmin);
-          int yp = ymin+rand()%(ymax-ymin);
-          if (!inBox(xp, yp, box_xmin, box_xmax, box_ymin, box_ymax)) {
-            //printf("Random\n");
-            improve_guess(a, a, ax, ay, xbest, ybest, dbest, xp, yp, mask, 2);
-          }
+          int xmin = MAX(xbest-mag, 0), xmax = MIN(xbest+mag+1, bew);
+          int ymin = MAX(ybest-mag, 0), ymax = MIN(ybest+mag+1, beh);
+          bool do_improve = false;
+          do {
+            int xp = xmin + rand() % (xmax-xmin);
+            int yp = ymin + rand() % (ymax-ymin);
+            if (!inBox(xp, yp, box)) {
+              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 2);
+              do_improve = true;
+            }
+          } while (!do_improve);
         }
 
         (*ann)[ay][ax] = XY_TO_INT(xbest, ybest);
         (*annd)[ay][ax] = dbest;
       }
     }
-
-    std::stringstream ss;
-    ss << iter;
-
-    std::string annd_file = "annd_iter_" + ss.str() + ".jpg";
-    const char* annd_ptr = annd_file.c_str();
-    save_bitmap(annd, annd_ptr);
-    
   } 
-
-  // to store pixels in the new patch
-  int sz = a->w*a->h; sz = sz << 2; // 4*w*h
-  double* accum = new double[sz];
-  memset(accum, 0, sizeof(double)*sz );
-
-  // fill in missing pixels
-  for (int ay = box_ymin; ay < box_ymax; ay++) {
-    for (int ax = box_xmin; ax < box_xmax; ax++) {
-      int vp = (*ann)[ay][ax];
-      int xp = INT_TO_X(vp), yp = INT_TO_Y(vp);
-      for (int dy = 0; dy < patch_w; dy++) {
-        int* arow = (*a)[yp+dy] + xp;
-        double* prow = &accum[4*((ay+dy)*a->w + ax)];
-        for(int dx = 0; dx < patch_w; dx++) {
-          if ((*annd)[yp+dy][xp+dx] == INT_MAX) { continue; }
-          int c = arow[dx];
-          double* p = &prow[4*dx];
-          p[0] += (c&255)*w;
-          p[1] += ((c>>8)&255)*w;
-          p[2] += ((c>>16)&255)*w;
-          p[3] += w;
-        }
-      }
-    }
-  } 
-  ans = norm_image(accum, a->w, a->h, NULL);
-  delete[] accum;
-
-  // join with original picture
-  for (int h = 0; h < a->h; h++) {
-    for (int w = 0; w < a->w; w++) {
-      if (!isHole(mask, w, h)) {
-        (*ans)[h][w] = 0 | (*a)[h][w];
-      }
-    }
-  }
-  
-  save_bitmap(ans, "final_picture.jpg");
-
-  save_bitmap(ann, "ann_final.jpg");
-  save_bitmap(annd, "annd_final.jpg");
-  
   
 }
 
-void reconstruct(BITMAP *a, BITMAP *b, BITMAP *ann, BITMAP *&r) {
-  r = new BITMAP(a->w, a->h);
-  memset(r->data, 0, sizeof(int)*a->w*a->h);
+/*
+ * Image inpainting
+ */
+void image_complete(Mat im_orig, Mat mask) {
 
-  for (int h = 0; h < a->h; h++)
-  {
-  	for (int w = 0; w < a->w; w++)
-  	{
-	  int v = (*ann)[h][w];
-      int xbest = INT_TO_X(v), ybest = INT_TO_Y(v);
-      (*r)[h][w] = (*b)[ybest][xbest];
-  	}
+  // some parameters
+  int rows = im_orig.rows;
+  int cols = im_orig.cols;
+  //int startscale = (int) -1*ceil(log2(MIN(rows, cols))) + 7;
+  int startscale = -2;
+  double scale = pow(2, startscale);
+
+  cout << "Scaling image by " << scale << endl;
+ 
+  // Resize image to starting scale
+  Mat resize_img, resize_mask;
+  resize(im_orig, resize_img, Size(), scale, scale, INTER_AREA);
+  resize(mask, resize_mask, Size(), scale, scale, INTER_AREA);
+
+  // Random starting guess for inpainted image
+  rows = resize_img.rows;
+  cols = resize_img.cols;
+  for (int y = 0; y < rows; ++y) {
+    for (int x = 0; x < cols; ++x) {
+      Vec3b mask_pixel = resize_mask.at<Vec3b>(y, x);
+      // if not black pixel, then means white (1) pixel in mask
+      // means hole, thus random init colors in hole
+      if (mask_pixel[0] != 0 || mask_pixel[1] !=  0 || mask_pixel[2] != 0) {
+        resize_img.at<Vec3b>(y, x)[0] = rand() % 256;
+        resize_img.at<Vec3b>(y, x)[1] = rand() % 256;
+        resize_img.at<Vec3b>(y, x)[2] = rand() % 256;
+        mask_pixel[0] = 255;
+        mask_pixel[1] = 255;
+        mask_pixel[2] = 255;
+      } else {
+        mask_pixel[0] = 0;
+        mask_pixel[1] = 0;
+        mask_pixel[2] = 0;
+      }
+    }
   }
+ 
+  Box ori_box = getBox(mask);
+  // debug
+  //imwrite("ori_mask.png", mask);
+  //imwrite("ori_img.png", im_orig);
+  //imwrite("resize_mask.png", resize_mask);
+  //imwrite("resize_img.png", resize_img);
+
+  cout << "Box shit " << ori_box.xmin << endl;
+  cout << "Box shit " << ori_box.xmax << endl;
+  cout << "Box shit " << ori_box.ymin << endl;
+  cout << "Box shit " << ori_box.ymax << endl;
+  Rect ppap(ori_box.xmin, ori_box.ymin, ori_box.xmax - ori_box.xmin, ori_box.ymax - ori_box.ymin);
+  // rectangle(im_orig, ppap, Scalar(255), 2, 8, 0);
+
+  // go through all scale
+  for (int logscale = startscale; logscale <= 0; logscale++) {
+    scale = pow(2, logscale);
+
+    cout << "Scaling is " << scale << endl;
+
+    Mat gray_mask;
+    cvtColor(resize_mask, gray_mask, CV_RGB2GRAY);
+   
+    Box mask_box = getBox(resize_mask);
+ 
+    // iterations of image completion
+    int im_iterations = 30;
+    for (int im_iter = 0; im_iter < im_iterations; ++im_iter) {
+      printf("im_iter = %d\n", im_iter);
+
+      BITMAP *ann = NULL, *annd = NULL;
+
+      Mat B = resize_img.clone();
+      bitwise_and(resize_img, 0, B, gray_mask);
+
+      // use patchmatch to find NN
+      patchmatch(resize_img, B, resize_mask, ann, annd, mask_box); 
+ 
+      // create new image by letting each patch vote
+      Mat R = Mat::zeros(resize_img.rows, resize_img.cols, CV_32FC3);
+      Mat Rcount = Mat::zeros(resize_img.rows, resize_img.cols, CV_32FC3);
+      //int ew = resize_img.cols - patch_w + 1;
+      //int eh = resize_img.rows - patch_w + 1;
+      for (int y = mask_box.ymin; y < mask_box.ymax; ++y) {
+        for (int x = mask_box.xmin; x < mask_box.xmax; ++x) {
+          Vec3b mask_pixel = resize_mask.at<Vec3b>(y, x);
+            int v = (*ann)[y][x];
+            int xbest  = INT_TO_X(v), ybest = INT_TO_Y(v);
+            Rect srcRect(Point(x, y), Size(patch_w, patch_w));
+            Rect dstRect(Point(xbest, ybest), Size(patch_w, patch_w));
+            float d = (float) (*annd)[y][x];
+            float sim = exp(-d / (2*pow(sigma, 2) ));
+            //float sim = 1.0;
+            Mat toAssign;
+            addWeighted(R(srcRect), 1.0, resize_img(dstRect), sim, 0, toAssign, CV_32FC3);
+            toAssign.copyTo(R(srcRect));
+            add(Rcount(srcRect), sim, toAssign, noArray(), CV_32FC3);
+            toAssign.copyTo(Rcount(srcRect));
+/*
+            Mat debugR = Rcount.clone();
+            cout << "Hole (" << x << ", " << y << ") has d " << d <<endl;
+            cout << "Hole (" << x << ", " << y << ") has sim1 " << -d / (2*pow(sigma, 2)) <<endl;
+            cout << "Hole (" << x << ", " << y << ") has sim2 " << exp(-d / (2*pow(sigma, 2))) <<endl;
+            cout << "Hole (" << x << ", " << y << ") has sim " << sim <<endl;
+            cout << sum(Rcount - debugR) <<endl;
+*/
+        }
+      }
+
+      // normalize new image
+      for (int h = 0; h < R.rows; h++) {
+        for (int w = 0; w < R.cols; w++) {
+          Vec3f rcount_pixel = Rcount.at<Vec3f>(h, w);
+          Vec3f& r_pixel = R.at<Vec3f>(h, w);
+            //printf( "Pixel is %d, %d, %d", rc_pixel[0] , rc_pixel[1] , rc_pixel[2] );;
+          if (rcount_pixel[0] > 0) {
+            r_pixel[0] = (r_pixel[0] / rcount_pixel[0]);
+            r_pixel[1] = (r_pixel[1] / rcount_pixel[1]);
+            r_pixel[2] = (r_pixel[2] / rcount_pixel[2]);
+          }
+        }
+      }
+
+      R.convertTo(R, CV_8UC3);
+
+      // keep pixel outside mask
+      Mat old_img = resize_img.clone();
+      R.copyTo(resize_img, resize_mask);
+
+      // measure how much image has changed, if not much then stop  TODO
+      if (im_iter > 1) {
+        double diff = 0;
+        for (int h = 0; h < R.rows; h++) {
+          for (int w = 0; w < R.cols; w++) {
+            Vec3b new_pixel = resize_img.at<Vec3b>(h, w);
+            Vec3b old_pixel = old_img.at<Vec3b>(h, w);
+            diff += pow(new_pixel[0] - old_pixel[0], 2);
+            diff += pow(new_pixel[1] - old_pixel[1], 2);
+            diff += pow(new_pixel[2] - old_pixel[2], 2);
+          }
+        }
+        cout << "diff is " << diff << endl;
+        // diff thres
+      }
+      delete ann;
+      delete annd;
+    }
+
+
+    // Upsample A for the next scale
+    if (logscale < 0) {
+      cout << "Upscaling" << endl;
+      // orig down scale to new scale
+      Mat upscale_img;
+      resize(im_orig, upscale_img, Size(), 2*scale, 2*scale, INTER_AREA);
+
+      // data upscale to new scale
+      int new_cols = upscale_img.cols, new_rows = upscale_img.rows; 
+      resize(resize_img, resize_img, Size(new_cols, new_rows), 0, 0, INTER_CUBIC);
+      resize(mask, resize_mask, Size(new_cols, new_rows), 0, 0, INTER_AREA);
+
+      Mat inverted_mask;
+      bitwise_not(resize_mask, inverted_mask);
+      upscale_img.copyTo(resize_img, inverted_mask);
+    }
+  }
+  
+  imwrite("final_out.jpg", resize_img);
+}
+
+/*
+ * Pass in mask start y, start x and the width and height of that mask
+ */
+void createMask(Mat a, int m_x, int m_y, int m_width, int m_height, Mat mask) {
+  int end_x = MIN(a.rows, m_x + m_width);
+  int end_y = MIN(a.cols, m_y + m_height);
+
+  mask(Rect(m_x, m_y, m_width, m_height)) = 255;
+  a(Rect(m_x, m_y, m_width, m_height)) = Vec3b(0, 0, 0);
 }
 
 int main(int argc, char *argv[]) {
@@ -406,20 +500,31 @@ int main(int argc, char *argv[]) {
   if (argc != 3) { fprintf(stderr, "im_complete a mask result\n"
                                    "Given input image a and mask outputs result\n"
                                    "These are stored as RGB 24-bit images, with a 24-bit int at every pixel. For the NNF we store (by<<12)|bx."); exit(1); }
-  printf("(1) Loading input images\n");
-  BITMAP *a = load_bitmap(argv[0]);
-  BITMAP *mask = load_bitmap(argv[1]);
-  BITMAP *ans = NULL, *ann = NULL, *annd = NULL;
-  /* Initialize with random nearest neighbor field (NNF). */
 
   Mat image = imread(argv[0]);
-  Mat mask_cv = imread(argv[1]);
-  Mat a = Mat::zeros(image.rows, image.cols, CV_8UC3)
 
-  printf("\n(2) Running PatchMatch\n");
-  patchmatch(a, mask, ans, ann, annd);
-  printf("\n(3) Saving output images: ans\n");
-  save_bitmap(ans, argv[2]);
+  Mat a_matrix = image.clone();
+  Mat ann_matrix = Mat::zeros(image.rows, image.cols, image.type());
+  Mat annd_matrix = Mat::zeros(image.rows, image.cols, image.type());
+
+  //createMask(a_matrix, 220, 300, 50, 50, mask_cv);
+
+  Mat mask_cv = imread(argv[1]);
+  /*
+  printf("mask_cv type %d", mask_cv.type());
+  for (int y = 0; y < mask_cv.rows; ++y) {
+    for (int x = 0; x < mask_cv.cols; ++x) {
+      Vec3b mask_pixel = mask_cv.at<Vec3b>(y, x);
+      if (mask_pixel != Vec3b(0, 0, 0)) {
+        a_matrix.at<Vec3b>(y, x) = Vec3b(0, 0, 0);
+      }
+    }
+  }
+  */
+
+  image_complete(image, mask_cv);
+
+  imwrite("mask_cv.png", mask_cv);
 
   return 0;
 }

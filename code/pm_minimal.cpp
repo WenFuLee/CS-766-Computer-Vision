@@ -153,9 +153,6 @@ void patchmatch(BITMAP *a, BITMAP *b, BITMAP *&ann, BITMAP *&annd) {
   memset(ann->data, 0, sizeof(int)*a->w*a->h);
   memset(annd->data, 0, sizeof(int)*a->w*a->h);
 
-  //save_bitmap(ann, "ann_before.jpg");
-  //save_bitmap(annd, "annd_before.jpg");
-
   // Initialization
   for (int ay = 0; ay < aeh; ay++) {
     for (int ax = 0; ax < aew; ax++) {
