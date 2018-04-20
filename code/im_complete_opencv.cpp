@@ -118,7 +118,7 @@ struct Box {
 int patch_w  = 8;
 int pm_iters = 5;
 int rs_max   = INT_MAX; // random search
-int sigma = 3 * patch_w * patch_w;
+int sigma = 1 * patch_w * patch_w;
 
 #define XY_TO_INT(x, y) (((y)<<12)|(x))
 #define INT_TO_X(v) ((v)&((1<<12)-1))
@@ -247,13 +247,15 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat mask) {
   Mat dilated_mask;
   dilate(mask, dilated_mask, element);
 
+  /*
   imwrite("dilated_mask.png", dilated_mask);
   imwrite("mask.png", mask);
-  //Mat inverted_mask;
-  //bitwise_not(mask, inverted_mask);
-  //Mat mask_diff;
-  //bitwise_and(dilated_mask, inverted_mask, mask_diff);
-  //imwrite("mask_diff.png", mask_diff);
+  Mat inverted_mask;
+  bitwise_not(mask, inverted_mask);
+  Mat mask_diff;
+  bitwise_and(dilated_mask, inverted_mask, mask_diff);
+  imwrite("mask_diff.png", mask_diff);
+  */
 
   int bx, by;
   // Initialization
@@ -264,9 +266,7 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat mask) {
         bx = rand() % aew;
         by = rand() % aeh;
         int mask_pixel = (int) dilated_mask.at<uchar>(by, bx);
-        // should find patches outside bounding box
-        // if (inBox(bx, by, box)) {
-        // or outside the hole
+        // should find patches outside the hole
         if (mask_pixel == 255) {
           valid = false;
         } else {
@@ -291,8 +291,6 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat mask) {
     }
   }
 
-  cout << "pass the test" <<endl;
-
   for (int iter = 0; iter < pm_iters; iter++) {
     // printf("  pm_iter = %d\n", iter);
     /* In each iteration, improve the NNF, by looping in scanline or reverse-scanline order. */
@@ -315,7 +313,6 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat mask) {
           int xp = INT_TO_X(vp) + xchange, yp = INT_TO_Y(vp);
           
           int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
-          // if (((unsigned) xp < (unsigned) aew) && !inBox(xp, yp, box)) {
           if (((unsigned) xp < (unsigned) aew) && mask_pixel != 255) {
             improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
           }
@@ -325,7 +322,6 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat mask) {
           int vp = (*ann)[ay-ychange][ax];
           int xp = INT_TO_X(vp), yp = INT_TO_Y(vp) + ychange;
           int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
-          //if (((unsigned) yp < (unsigned) aeh) && !inBox(xp, yp, box)) {
           if (((unsigned) yp < (unsigned) aeh) && mask_pixel != 255) {
             improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
           }
@@ -343,7 +339,6 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat mask) {
             int xp = xmin + rand() % (xmax-xmin);
             int yp = ymin + rand() % (ymax-ymin);
             int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
-            //if (!inBox(xp, yp, box)) {
             if (mask_pixel != 255) {
               improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 2);
               do_improve = true;
@@ -367,8 +362,8 @@ void image_complete(Mat im_orig, Mat mask) {
   // some parameters
   int rows = im_orig.rows;
   int cols = im_orig.cols;
-  //int startscale = (int) -1*ceil(log2(MIN(rows, cols))) + 8;
-  int startscale = -2;
+  int startscale = (int) -1*ceil(log2(MIN(rows, cols))) + 5;
+  //int startscale = -3;
   double scale = pow(2, startscale);
 
   cout << "Scaling image by " << scale << endl;
@@ -387,12 +382,12 @@ void image_complete(Mat im_orig, Mat mask) {
   for (int y = 0; y < rows; ++y) {
     for (int x = 0; x < cols; ++x) {
       int mask_pixel = (int) resize_mask.at<uchar>(y, x);
-      // if not black pixel, then means white (1) pixel in mask
-      // means hole, thus random init colors in hole
       if (mask_pixel != 0 && mask_pixel != 255) {
-        cout << "FUFUFUFUFUCK" << endl;
+        cout << "GGGGGGGGGGGGGGG" << endl;
         exit(1);
       }
+      // if not black pixel, then means white (1) pixel in mask
+      // means hole, thus random init colors in hole
       if (mask_pixel != 0) {
         resize_img.at<Vec3b>(y, x)[0] = rand() % 256;
         resize_img.at<Vec3b>(y, x)[1] = rand() % 256;
@@ -405,16 +400,21 @@ void image_complete(Mat im_orig, Mat mask) {
   double p1 = ((double)getTickCount() - t1) / getTickFrequency();
   cout << "time for init = " << p1 << endl;
 
+  // just for DEBUG
+  int index = 0;
+
   // go through all scale
   for (int logscale = startscale; logscale <= 0; logscale++) {
+    index++;
+
     scale = pow(2, logscale);
 
     cout << "Scaling is " << scale << endl;
    
     Box mask_box = getBox(resize_mask);
  
-    string im_outfile = "im_scale" + to_string(logscale)  + ".png";
-    imwrite(im_outfile, resize_img);
+    //string im_outfile = "im_scale" + to_string(index)  + ".png";
+    //imwrite(im_outfile, resize_img);
 
     // iterations of image completion
     int im_iterations = 40;
@@ -429,7 +429,6 @@ void image_complete(Mat im_orig, Mat mask) {
       bitwise_and(resize_img, 0, B, resize_mask);
 
       // use patchmatch to find NN
-      // patchmatch(resize_img, B, ann, annd, mask_box); 
       patchmatch(resize_img, B, ann, annd, resize_mask); 
 
       //stringstream ss;
@@ -475,7 +474,6 @@ void image_complete(Mat im_orig, Mat mask) {
       for (int h = 0; h < R.rows; h++) {
         for (int w = 0; w < R.cols; w++) {
           Vec3f rcount_pixel = Rcount.at<Vec3f>(h, w);
-            //printf( "Pixel is %d, %d, %d", rc_pixel[0] , rc_pixel[1] , rc_pixel[2] );;
           if (rcount_pixel[0] > 0) {
             Vec3f& r_pixel = R.at<Vec3f>(h, w);
             r_pixel[0] = (r_pixel[0] / rcount_pixel[0]);
@@ -517,14 +515,11 @@ void image_complete(Mat im_orig, Mat mask) {
         }
         cout << "diff is " << diff << endl;
         assert(mask_count_other == 0);
-        //cout << "mask black count is " << mask_count_black << endl;
-        //cout << "mask white count is " << mask_count_white << endl;
         //cout << "mask other count is " << mask_count_other << endl;
-        // diff thres
         cout << "norm diff is " << diff/mask_count_white << endl;
       }
 
-      string outfile = "r_scale" + to_string(logscale) + "_imiter" + to_string(im_iter) + ".png";
+      string outfile = "r_scale" + to_string(index) + "_imiter" + to_string(im_iter) + ".png";
       imwrite(outfile, R);
  
 
@@ -565,16 +560,11 @@ int main(int argc, char *argv[]) {
   argv++;
   if (argc != 3) { fprintf(stderr, "im_complete a mask result\n"
                                    "Given input image a and mask outputs result\n"
-                                   "These are stored as RGB 24-bit images, with a 24-bit int at every pixel. For the NNF we store (by<<12)|bx."); exit(1); }
+                                   "These are stored as RGB 24-bit images, with a 24-bit int at every pixel."); exit(1); }
 
   Mat image = imread(argv[0]);
 
   Mat a_matrix = image.clone();
-  Mat ann_matrix = Mat::zeros(image.rows, image.cols, image.type());
-  Mat annd_matrix = Mat::zeros(image.rows, image.cols, image.type());
-
-  //createMask(a_matrix, 220, 300, 50, 50, mask_cv);
-
   Mat mask_cv = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
   
   printf("mask_cv type %d", mask_cv.type());
@@ -587,7 +577,6 @@ int main(int argc, char *argv[]) {
     }
   }
   
-
   image_complete(image, mask_cv);
 
   return 0;
