@@ -222,7 +222,7 @@ Box getBox(Mat mask) {
 }
 
 /* Match image a to image b, returning the nearest neighbor field mapping a => b coords, stored in an RGB 24-bit image as (by<<12)|bx. */
-void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Box box) {
+void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat mask) {
   /* Initialize with random nearest neighbor field (NNF). */
   ann = new BITMAP(a.cols, a.rows);
   annd = new BITMAP(a.cols, a.rows);
@@ -234,6 +234,27 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Box box) {
 
   //int box_xmin = box.xmin, box_xmax = box.xmax, box_ymin = box.ymin, box_ymax = box.ymax;
 
+  // dilate the mask
+  // if patch_w = 3
+  // kernel width = 5 , 0 1 2 is 1
+  // pixel is    result should be 
+  // 0 0 0 0     1 1 1 0
+  // 0 0 0 0     1 1 1 0
+  // 0 0 1 0     1 1 1 0
+  // 0 0 0 0     0 0 0 0
+  Mat element = Mat::zeros(2*patch_w - 1, 2*patch_w - 1, CV_8UC1);
+  element(Rect(patch_w - 1, patch_w - 1, patch_w, patch_w)) = 255;
+  Mat dilated_mask;
+  dilate(mask, dilated_mask, element);
+
+  imwrite("dilated_mask.png", dilated_mask);
+  imwrite("mask.png", mask);
+  //Mat inverted_mask;
+  //bitwise_not(mask, inverted_mask);
+  //Mat mask_diff;
+  //bitwise_and(dilated_mask, inverted_mask, mask_diff);
+  //imwrite("mask_diff.png", mask_diff);
+
   int bx, by;
   // Initialization
   for (int ay = 0; ay < aeh; ay++) {
@@ -242,10 +263,11 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Box box) {
       while (!valid) {
         bx = rand() % aew;
         by = rand() % aeh;
+        int mask_pixel = (int) dilated_mask.at<uchar>(by, bx);
         // should find patches outside bounding box
-        if (inBox(bx, by, box)) {
+        // if (inBox(bx, by, box)) {
         // or outside the hole
-        //if (isHole(mask, bx, by) && isHole(mask, bx+patch_w, by+patch_w)) {
+        if (mask_pixel == 255) {
           valid = false;
         } else {
           valid = true;
@@ -255,6 +277,21 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Box box) {
       (*annd)[ay][ax] = dist(a, b, ax, ay, bx, by);
     }
   }
+
+
+  for (int ay = 0; ay < aeh; ay++ ) {
+    for (int ax = 0; ax < aew; ax++) {
+      int vp = (*ann)[ay][ax];
+      int xp = INT_TO_X(vp);
+      int yp = INT_TO_Y(vp);
+      int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+      if (mask_pixel == 255) {
+         cout << "fuck " << xp << " ,  " << yp << " pixel " << mask_pixel << endl;
+      }
+    }
+  }
+
+  cout << "pass the test" <<endl;
 
   for (int iter = 0; iter < pm_iters; iter++) {
     // printf("  pm_iter = %d\n", iter);
@@ -276,7 +313,10 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Box box) {
         if ((unsigned) (ax - xchange) < (unsigned) aew) {
           int vp = (*ann)[ay][ax-xchange];
           int xp = INT_TO_X(vp) + xchange, yp = INT_TO_Y(vp);
-          if (((unsigned) xp < (unsigned) aew) && !inBox(xp, yp, box)) {
+          
+          int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+          // if (((unsigned) xp < (unsigned) aew) && !inBox(xp, yp, box)) {
+          if (((unsigned) xp < (unsigned) aew) && mask_pixel != 255) {
             improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
           }
         }
@@ -284,7 +324,9 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Box box) {
         if ((unsigned) (ay - ychange) < (unsigned) aeh) {
           int vp = (*ann)[ay-ychange][ax];
           int xp = INT_TO_X(vp), yp = INT_TO_Y(vp) + ychange;
-          if (((unsigned) yp < (unsigned) aeh) && !inBox(xp, yp, box)) {
+          int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+          //if (((unsigned) yp < (unsigned) aeh) && !inBox(xp, yp, box)) {
+          if (((unsigned) yp < (unsigned) aeh) && mask_pixel != 255) {
             improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
           }
         }
@@ -300,7 +342,9 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Box box) {
           do {
             int xp = xmin + rand() % (xmax-xmin);
             int yp = ymin + rand() % (ymax-ymin);
-            if (!inBox(xp, yp, box)) {
+            int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+            //if (!inBox(xp, yp, box)) {
+            if (mask_pixel != 255) {
               improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 2);
               do_improve = true;
             }
@@ -357,20 +401,6 @@ void image_complete(Mat im_orig, Mat mask) {
     }
   }
 
-  Box ori_box = getBox(mask);
-  // debug
-  //imwrite("ori_mask.png", mask);
-  //imwrite("ori_img.png", im_orig);
-  //imwrite("resize_mask.png", resize_mask);
-  //imwrite("resize_img.png", resize_img);
-
-  cout << "Box shit " << ori_box.xmin << endl;
-  cout << "Box shit " << ori_box.xmax << endl;
-  cout << "Box shit " << ori_box.ymin << endl;
-  cout << "Box shit " << ori_box.ymax << endl;
-  Rect ppap(ori_box.xmin, ori_box.ymin, ori_box.xmax - ori_box.xmin, ori_box.ymax - ori_box.ymin);
-  // rectangle(im_orig, ppap, Scalar(255), 2, 8, 0);
-
 
   double p1 = ((double)getTickCount() - t1) / getTickFrequency();
   cout << "time for init = " << p1 << endl;
@@ -399,7 +429,8 @@ void image_complete(Mat im_orig, Mat mask) {
       bitwise_and(resize_img, 0, B, resize_mask);
 
       // use patchmatch to find NN
-      patchmatch(resize_img, B, ann, annd, mask_box); 
+      // patchmatch(resize_img, B, ann, annd, mask_box); 
+      patchmatch(resize_img, B, ann, annd, resize_mask); 
 
       //stringstream ss;
       //ss << im_iter;
