@@ -228,8 +228,8 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask) {
     for (int ax = 0; ax < aew; ax++) {
       bool valid = false;
       while (!valid) {
-        bx = rand() % aew;
-        by = rand() % aeh;
+        bx = rand() % bew;
+        by = rand() % beh;
         int mask_pixel = (int) dilated_mask.at<uchar>(by, bx);
         // should find patches outside the hole
         if (mask_pixel == 255) {
@@ -347,7 +347,6 @@ void image_complete(Mat im_orig, Mat mask) {
   resize(mask, resize_mask, Size(), scale, scale, INTER_AREA);
   threshold(resize_mask, resize_mask, 127, 255, 0);
 
-  /*
   // Random starting guess for inpainted image
   rows = resize_img.rows;
   cols = resize_img.cols;
@@ -367,7 +366,6 @@ void image_complete(Mat im_orig, Mat mask) {
       }
     }
   }
-  */
 
 
   double p1 = ((double)getTickCount() - t1) / getTickFrequency();
@@ -505,11 +503,9 @@ void image_complete(Mat im_orig, Mat mask) {
           }
         }
         assert(mask_count_other == 0);
-#ifdef DEBUG
         cout << "diff is " << diff << endl;
         cout << "mask count is " << mask_count_white << endl;
         cout << "norm diff is " << diff/mask_count_white << endl;
-#endif
         if (diff/mask_count_white < 0.02) {
           break;
         }

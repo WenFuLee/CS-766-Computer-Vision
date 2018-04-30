@@ -272,8 +272,8 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
       // if not having constraint
       if (const_pixel == 0) {
         while (!valid) {
-          bx = rand() % aew;
-          by = rand() % aeh;
+          bx = rand() % bew;
+          by = rand() % beh;
           int mask_pixel = (int) dilated_mask.at<uchar>(by, bx);
           // should find patches outside the hole
           if (mask_pixel == 255) {
@@ -448,6 +448,26 @@ void image_complete(Mat im_orig, Mat mask, Mat constraint) {
   resize(mask, resize_mask, Size(), scale, scale, INTER_AREA);
   threshold(resize_mask, resize_mask, 127, 255, 0);
   resize(constraint, resize_constraint, Size(), scale, scale, INTER_NEAREST);
+
+  // Random starting guess for inpainted image
+  rows = resize_img.rows;
+  cols = resize_img.cols;
+  for (int y = 0; y < rows; ++y) {
+    for (int x = 0; x < cols; ++x) {
+      int mask_pixel = (int) resize_mask.at<uchar>(y, x);
+      if (mask_pixel != 0 && mask_pixel != 255) {
+        cout << "GGGGGGGGGGGGGGG" << endl;
+        exit(1);
+      }
+      // if not black pixel, then means white (1) pixel in mask
+      // means hole, thus random init colors in hole
+      if (mask_pixel != 0) {
+        resize_img.at<Vec3b>(y, x)[0] = rand() % 256;
+        resize_img.at<Vec3b>(y, x)[1] = rand() % 256;
+        resize_img.at<Vec3b>(y, x)[2] = rand() % 256;
+      }
+    }
+  }
 
   double p1 = ((double)getTickCount() - t1) / getTickFrequency();
   cout << "time for init = " << p1 << endl;
