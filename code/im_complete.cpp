@@ -415,13 +415,13 @@ void patchmatch(BITMAP *a, BITMAP *mask, BITMAP *&ans, BITMAP *&ann, BITMAP *&an
           }
         }
       }
-    } 
-    
+    }
+
 
     ans = norm_image(accum, a->w, a->h, NULL, mask);
 
     save_bitmap(ans, "ans.jpg");
-   
+
     // join with original picture
     for (int h = 0; h < a->h; h++) {
       for (int w = 0; w < a->w; w++) {

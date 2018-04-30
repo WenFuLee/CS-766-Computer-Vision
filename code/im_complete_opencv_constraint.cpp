@@ -111,6 +111,41 @@ struct Box {
   int xmin, xmax, ymin, ymax;
 };
 
+// a struct for constraint map
+struct CMap {
+  unordered_map<int, vector<pair<int, int> > > constraint_map;
+  vector<int> constraint_ids;
+};
+
+void getCMap(Mat constraint, CMap* cmap) {
+  unordered_map<int, vector<pair<int, int> > >::iterator got;
+  for (int y = 0; y < constraint.rows; ++y) {
+    for (int x = 0; x < constraint.cols; ++x) {
+      int cons_pixel = (int) constraint.at<uchar>(y, x);
+      if (cons_pixel == 0)
+          continue;
+      got = cmap->constraint_map.find(cons_pixel);
+      if (got == cmap->constraint_map.end()) {
+        vector<pair<int, int> > constraint_vector;
+        constraint_vector.push_back(make_pair(x, y));
+        cmap->constraint_map[cons_pixel] = constraint_vector;
+        cmap->constraint_ids.push_back(cons_pixel);
+      } else {
+        got->second.push_back(make_pair(x, y));
+      }
+    }
+  }
+
+  cout << "Rows: " << constraint.rows << ", Cols: " << constraint.cols << endl;
+  cout << constraint.rows * constraint.cols << endl;
+  cout << "Map has size of " << cmap->constraint_map.size() << endl;
+  for (int i = 0; i < cmap->constraint_ids.size(); ++i) {
+    int id = cmap->constraint_ids[i];
+    cout << "  Map id " << id << " has " << cmap->constraint_map.find(id)->second.size() << " elements " <<endl;
+  }
+
+}
+
 /* -------------------------------------------------------------------------
    PatchMatch, using L2 distance between upright patches that translate only
    ------------------------------------------------------------------------- */
@@ -211,7 +246,7 @@ void improve_guess(Mat a, Mat b, int ax, int ay, int &xbest, int &ybest, int &db
 }
 
 /* Match image a to image b, returning the nearest neighbor field mapping a => b coords, stored in an RGB 24-bit image as (by<<12)|bx. */
-void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask) {
+void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat constraint, CMap* cmap) {
   /* Initialize with random nearest neighbor field (NNF). */
   ann = new BITMAP(a.cols, a.rows);
   annd = new BITMAP(a.cols, a.rows);
@@ -221,21 +256,48 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask) {
   memset(ann->data, 0, sizeof(int) * a.cols * a.rows);
   memset(annd->data, 0, sizeof(int) * a.cols * a.rows);
 
+  // process constraint
+  //CMap *cmap_ptr, cmap;
+  //cmap_ptr = &cmap;
+  //getCMap(constraint, cmap_ptr);
 
   // Initialization
   int bx, by;
+  unordered_map<int, vector<pair<int, int> > >::iterator got;
   for (int ay = 0; ay < aeh; ay++) {
     for (int ax = 0; ax < aew; ax++) {
       bool valid = false;
-      while (!valid) {
-        bx = rand() % aew;
-        by = rand() % aeh;
-        int mask_pixel = (int) dilated_mask.at<uchar>(by, bx);
-        // should find patches outside the hole
-        if (mask_pixel == 255) {
-          valid = false;
-        } else {
-          valid = true;
+      int const_pixel = (int) constraint.at<uchar>(ay, ax);
+
+      // if not having constraint
+      if (const_pixel == 0) {
+        while (!valid) {
+          bx = rand() % aew;
+          by = rand() % aeh;
+          int mask_pixel = (int) dilated_mask.at<uchar>(by, bx);
+          // should find patches outside the hole
+          if (mask_pixel == 255) {
+            valid = false;
+          } else {
+            valid = true;
+          }
+        }
+      } else {
+        got = cmap->constraint_map.find(const_pixel);
+        if (got == cmap->constraint_map.end()) {
+          cout << "Something wrong in constraint map " << endl;
+          exit(1);
+        }
+        while (!valid) {
+          int rand_index = rand() % got->second.size();
+          bx = MIN(got->second[rand_index].first, bew - 1);
+          by = MIN(got->second[rand_index].second, beh - 1);
+          int mask_pixel = (int) dilated_mask.at<uchar>(by, bx);
+          if (mask_pixel == 255) {
+            valid = false;
+          } else {
+            valid = true;
+          }
         }
       }
       (*ann)[ay][ax] = XY_TO_INT(bx, by);
@@ -268,6 +330,9 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask) {
     }
     for (int ay = ystart; ay != yend; ay += ychange) {
       for (int ax = xstart; ax != xend; ax += xchange) {
+
+        int const_pixel = (int) constraint.at<uchar>(ay, ax);
+
         /* Current (best) guess. */
         int v = (*ann)[ay][ax];
         int xbest = INT_TO_X(v), ybest = INT_TO_Y(v);
@@ -279,8 +344,13 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask) {
           int xp = INT_TO_X(vp) + xchange, yp = INT_TO_Y(vp);
 
           int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+          int new_const_pixel = (int) constraint.at<uchar>(yp, xp);
           if (((unsigned) xp < (unsigned) aew) && mask_pixel != 255) {
-            improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
+            if (const_pixel == 0) {
+              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
+            } else if (const_pixel == new_const_pixel) {
+              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
+            }
           }
         }
 
@@ -288,28 +358,52 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask) {
           int vp = (*ann)[ay-ychange][ax];
           int xp = INT_TO_X(vp), yp = INT_TO_Y(vp) + ychange;
           int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+          int new_const_pixel = (int) constraint.at<uchar>(yp, xp);
           if (((unsigned) yp < (unsigned) aeh) && mask_pixel != 255) {
-            improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
+            if (const_pixel == 0) {
+              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
+            } else if (const_pixel == new_const_pixel) {
+              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
+            }
           }
         }
 
         /* Random search: Improve current guess by searching in boxes of exponentially decreasing size around the current best guess. */
-        int rs_start = rs_max;
-        if (rs_start > MAX(b.cols, b.rows)) { rs_start = MAX(b.cols, b.rows); }
-        for (int mag = rs_start; mag >= 1; mag /= 2) {
-          /* Sampling window */
-          int xmin = MAX(xbest-mag, 0), xmax = MIN(xbest+mag+1, bew);
-          int ymin = MAX(ybest-mag, 0), ymax = MIN(ybest+mag+1, beh);
-          bool do_improve = false;
-          do {
-            int xp = xmin + rand() % (xmax-xmin);
-            int yp = ymin + rand() % (ymax-ymin);
-            int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
-            if (mask_pixel != 255) {
-              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 2);
-              do_improve = true;
-            }
-          } while (!do_improve);
+        if (const_pixel == 0) {
+          int rs_start = rs_max;
+          if (rs_start > MAX(b.cols, b.rows)) { rs_start = MAX(b.cols, b.rows); }
+          for (int mag = rs_start; mag >= 1; mag /= 2) {
+            /* Sampling window */
+            int xmin = MAX(xbest-mag, 0), xmax = MIN(xbest+mag+1, bew);
+            int ymin = MAX(ybest-mag, 0), ymax = MIN(ybest+mag+1, beh);
+            bool do_improve = false;
+            do {
+              int xp = xmin + rand() % (xmax-xmin);
+              int yp = ymin + rand() % (ymax-ymin);
+              int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+              if (mask_pixel != 255) {
+                improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 2);
+                do_improve = true;
+              }
+            } while (!do_improve);
+          }
+        } else {
+          got = cmap->constraint_map.find(const_pixel);
+          // we choose the improve times to be sqrt of the size
+          int improve_times = (int) ceil(sqrt(got->second.size()));
+          for (int i_t = 0; i_t < improve_times; ++i_t) {
+            bool do_improve = false;
+            do {
+              int rand_index = rand() % got->second.size();
+              int xp = MIN(got->second[rand_index].first, bew - 1);
+              int yp = MIN(got->second[rand_index].second, beh - 1);
+              int mask_pixel = (int) dilated_mask.at<uchar>();
+              if (mask_pixel != 255) {
+                improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 2);
+                do_improve = true;
+              }
+            } while (!do_improve);
+          }
         }
 
         (*ann)[ay][ax] = XY_TO_INT(xbest, ybest);
@@ -319,22 +413,29 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask) {
   }
 }
 
+
 /**
  * Image inpainting algorithm
  * Basic idea based on Wexler et. al 2017 Space-Time Image Completion
  *
  * @param im_orig: original image (with pixels in hole presented or not)
  * @param mask:    mask specify missing region
+ * @param constraint: constraint image generate by user
  *
  * @return the completed/inpainting image
  */
-void image_complete(Mat im_orig, Mat mask) {
+void image_complete(Mat im_orig, Mat mask, Mat constraint) {
+
+  // hashmap that contains the constraint
+  CMap * cmap_ptr, cmap_orig;
+  cmap_ptr = &cmap_orig;
+  getCMap(constraint, cmap_ptr);
 
   // some parameters for scaling
   int rows = im_orig.rows;
   int cols = im_orig.cols;
   int startscale = (int) -1*ceil(log2(MIN(rows, cols))) + 5;
-  //int startscale = -3;
+  //int startscale = -2;
   double scale = pow(2, startscale);
 
   cout << "Scaling image by " << scale << endl;
@@ -342,33 +443,11 @@ void image_complete(Mat im_orig, Mat mask) {
   double t1 = (double)getTickCount();
 
   // Resize image to starting scale
-  Mat resize_img, resize_mask;
+  Mat resize_img, resize_mask, resize_constraint;
   resize(im_orig, resize_img, Size(), scale, scale, INTER_AREA);
   resize(mask, resize_mask, Size(), scale, scale, INTER_AREA);
   threshold(resize_mask, resize_mask, 127, 255, 0);
-
-  /*
-  // Random starting guess for inpainted image
-  rows = resize_img.rows;
-  cols = resize_img.cols;
-  for (int y = 0; y < rows; ++y) {
-    for (int x = 0; x < cols; ++x) {
-      int mask_pixel = (int) resize_mask.at<uchar>(y, x);
-      if (mask_pixel != 0 && mask_pixel != 255) {
-        cout << "GGGGGGGGGGGGGGG" << endl;
-        exit(1);
-      }
-      // if not black pixel, then means white (1) pixel in mask
-      // means hole, thus random init colors in hole
-      if (mask_pixel != 0) {
-        resize_img.at<Vec3b>(y, x)[0] = rand() % 256;
-        resize_img.at<Vec3b>(y, x)[1] = rand() % 256;
-        resize_img.at<Vec3b>(y, x)[2] = rand() % 256;
-      }
-    }
-  }
-  */
-
+  resize(constraint, resize_constraint, Size(), scale, scale, INTER_NEAREST);
 
   double p1 = ((double)getTickCount() - t1) / getTickFrequency();
   cout << "time for init = " << p1 << endl;
@@ -409,6 +488,29 @@ void image_complete(Mat im_orig, Mat mask) {
     imwrite("mask_diff.png", mask_diff);
     */
 
+    CMap cmap;
+    cmap_ptr = &cmap;
+    getCMap(resize_constraint, cmap_ptr);
+
+    /*
+    for (int y = 0; y < resize_mask.rows; ++y) {
+      for (int x = 0; x < resize_mask.cols; ++x) {
+        int const_pixel = (int) resize_constraint.at<uchar>(y, x);
+        Vec3b& img_pixel = resize_img.at<Vec3b>(y, x);
+        if (const_pixel != 0) {
+          img_pixel[0] = 255;
+          img_pixel[1] = 0;
+          img_pixel[2] = 0;
+        }
+      }
+    }
+
+    stringstream ss;
+    ss << index;
+    string debug_file = "debug_"  + ss.str() + ".png";
+    imwrite(debug_file, resize_img);
+    */
+
     // iterations of image completion
     int im_iterations = 60;
     for (int im_iter = 0; im_iter < im_iterations; ++im_iter) {
@@ -422,7 +524,7 @@ void image_complete(Mat im_orig, Mat mask) {
       bitwise_and(resize_img, 0, B, resize_mask);
 
       // use patchmatch to find NN
-      patchmatch(resize_img, B, ann, annd, dilated_mask);
+      patchmatch(resize_img, B, ann, annd, dilated_mask, resize_constraint, cmap_ptr);
 
       //stringstream ss;
       //ss << im_iter;
@@ -535,6 +637,7 @@ void image_complete(Mat im_orig, Mat mask) {
       int new_cols = upscale_img.cols, new_rows = upscale_img.rows;
       resize(resize_img, resize_img, Size(new_cols, new_rows), 0, 0, INTER_CUBIC);
       resize(mask, resize_mask, Size(new_cols, new_rows), 0, 0, INTER_AREA);
+      resize(constraint, resize_constraint, Size(new_cols, new_rows), 0, 0, INTER_NEAREST);
 
       threshold(resize_mask, resize_mask, 127, 255, 0);
 
@@ -553,7 +656,7 @@ void image_complete(Mat im_orig, Mat mask) {
 int main(int argc, char *argv[]) {
   argc--;
   argv++;
-  if (argc != 3) { fprintf(stderr, "im_complete a mask result\n"
+  if (argc != 3 && argc != 4) { fprintf(stderr, "im_complete a mask result\n"
                                    "Given input image a and mask outputs result\n"
                                    "These are stored as RGB 24-bit images, with a 24-bit int at every pixel."); exit(1); }
 
@@ -561,6 +664,7 @@ int main(int argc, char *argv[]) {
 
   Mat a_matrix = image.clone();
   Mat mask_cv = imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
+  Mat const_cv = imread(argv[2], CV_LOAD_IMAGE_GRAYSCALE);
 
   printf("mask_cv type %d\n", mask_cv.type());
   for (int y = 0; y < mask_cv.rows; ++y) {
@@ -572,7 +676,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  image_complete(image, mask_cv);
+  image_complete(image, mask_cv, const_cv);
 
   return 0;
 }
