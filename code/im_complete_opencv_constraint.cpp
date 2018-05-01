@@ -25,6 +25,8 @@
 #include <opencv2/opencv.hpp>
 
 #include <iostream>
+#include <vector>
+#include <unordered_map>
 
 #ifndef MAX
 #define MAX(a, b) ((a)>(b)?(a):(b))
