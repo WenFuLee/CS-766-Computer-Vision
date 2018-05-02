@@ -152,7 +152,7 @@ void getCMap(Mat constraint, CMap* cmap) {
    PatchMatch, using L2 distance between upright patches that translate only
    ------------------------------------------------------------------------- */
 
-int patch_w  = 6;
+int patch_w  = 8;
 int pm_iters = 5;
 int rs_max   = INT_MAX; // random search
 int sigma = 1 * patch_w * patch_w;
@@ -292,10 +292,12 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
         }
         while (!valid) {
           int rand_index = rand() % got->second.size();
-          bx = MIN(got->second[rand_index].first, bew - 1);
-          by = MIN(got->second[rand_index].second, beh - 1);
+          bx = got->second[rand_index].first;
+          by = got->second[rand_index].second;
           int mask_pixel = (int) dilated_mask.at<uchar>(by, bx);
-          if (mask_pixel == 255) {
+          if (bx >= bew || by >= beh) {
+              valid = false;
+          } else if (mask_pixel == 255) {
             valid = false;
           } else {
             valid = true;
@@ -402,10 +404,12 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
             bool do_improve = false;
             do {
               int rand_index = rand() % got->second.size();
-              int xp = MIN(got->second[rand_index].first, bew - 1);
-              int yp = MIN(got->second[rand_index].second, beh - 1);
-              int mask_pixel = (int) dilated_mask.at<uchar>();
-              if (mask_pixel != 255) {
+              int xp = got->second[rand_index].first;
+              int yp = got->second[rand_index].second;
+              int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+              if (xp >= bew || yp >= beh) {
+                do_improve = false;
+              } else if (mask_pixel != 255) {
                 improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 2);
                 do_improve = true;
               }
@@ -433,16 +437,11 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
  */
 void image_complete(Mat im_orig, Mat mask, Mat constraint) {
 
-  // hashmap that contains the constraint
-  //CMap * cmap_ptr, cmap_orig;
-  //cmap_ptr = &cmap_orig;
-  //getCMap(constraint, cmap_ptr);
-
   // some parameters for scaling
   int rows = im_orig.rows;
   int cols = im_orig.cols;
   int startscale = (int) -1*ceil(log2(MIN(rows, cols))) + 5;
-  //int startscale = -2;
+  //int startscale = -3;
   double scale = pow(2, startscale);
 
   cout << "Scaling image by " << scale << endl;
@@ -532,11 +531,25 @@ void image_complete(Mat im_orig, Mat mask, Mat constraint) {
       }
     }
 
+
+    unordered_map<int, vector<pair<int, int> > >::iterator it;
+    for (it = cmap_ptr->constraint_map.begin(); it != cmap_ptr->constraint_map.end(); ++it) {
+      for (int i = 0; i < it->second.size(); ++i) {
+        int nx = it->second[i].first;
+        int ny = it->second[i].second;
+        Vec3b& img_pixel = resize_img.at<Vec3b>(ny, nx);
+        img_pixel[0] = 255;
+        img_pixel[1] = 0;
+        img_pixel[2] = 0;
+
+      }
+    }
+
     stringstream ss;
     ss << index;
     string debug_file = "debug_"  + ss.str() + ".png";
     imwrite(debug_file, resize_img);
-    */
+     */
 
     // iterations of image completion
     int im_iterations = 60;
