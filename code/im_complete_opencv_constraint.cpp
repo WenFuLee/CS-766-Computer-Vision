@@ -152,7 +152,7 @@ void getCMap(Mat constraint, CMap* cmap) {
    PatchMatch, using L2 distance between upright patches that translate only
    ------------------------------------------------------------------------- */
 
-int patch_w  = 8;
+int patch_w  = 6;
 int pm_iters = 5;
 int rs_max   = INT_MAX; // random search
 int sigma = 1 * patch_w * patch_w;
@@ -345,13 +345,15 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
           int vp = (*ann)[ay][ax-xchange];
           int xp = INT_TO_X(vp) + xchange, yp = INT_TO_Y(vp);
 
-          int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
-          int new_const_pixel = (int) constraint.at<uchar>(yp, xp);
-          if (((unsigned) xp < (unsigned) aew) && mask_pixel != 255) {
-            if (const_pixel == 0) {
-              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
-            } else if (const_pixel == new_const_pixel) {
-              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
+          if (((unsigned) xp < (unsigned) aew)) {
+            int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+            if (mask_pixel != 255) {
+              int new_const_pixel = (int) constraint.at<uchar>(yp, xp);
+              if (const_pixel == 0) {
+                improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
+              } else if (const_pixel == new_const_pixel) {
+                improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
+              }
             }
           }
         }
@@ -359,13 +361,16 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
         if ((unsigned) (ay - ychange) < (unsigned) aeh) {
           int vp = (*ann)[ay-ychange][ax];
           int xp = INT_TO_X(vp), yp = INT_TO_Y(vp) + ychange;
-          int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
-          int new_const_pixel = (int) constraint.at<uchar>(yp, xp);
-          if (((unsigned) yp < (unsigned) aeh) && mask_pixel != 255) {
-            if (const_pixel == 0) {
-              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
-            } else if (const_pixel == new_const_pixel) {
-              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
+
+          if (((unsigned) yp < (unsigned) aeh)) {
+            int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+            if (mask_pixel != 255) {
+              int new_const_pixel = (int) constraint.at<uchar>(yp, xp);
+              if (const_pixel == 0) {
+                improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
+              } else if (const_pixel == new_const_pixel) {
+                improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
+              }
             }
           }
         }
@@ -429,9 +434,9 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
 void image_complete(Mat im_orig, Mat mask, Mat constraint) {
 
   // hashmap that contains the constraint
-  CMap * cmap_ptr, cmap_orig;
-  cmap_ptr = &cmap_orig;
-  getCMap(constraint, cmap_ptr);
+  //CMap * cmap_ptr, cmap_orig;
+  //cmap_ptr = &cmap_orig;
+  //getCMap(constraint, cmap_ptr);
 
   // some parameters for scaling
   int rows = im_orig.rows;
@@ -511,7 +516,7 @@ void image_complete(Mat im_orig, Mat mask, Mat constraint) {
     */
 
     CMap cmap;
-    cmap_ptr = &cmap;
+    CMap* cmap_ptr = &cmap;
     getCMap(resize_constraint, cmap_ptr);
 
     /*

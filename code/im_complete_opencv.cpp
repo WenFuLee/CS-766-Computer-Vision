@@ -278,18 +278,23 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask) {
           int vp = (*ann)[ay][ax-xchange];
           int xp = INT_TO_X(vp) + xchange, yp = INT_TO_Y(vp);
 
-          int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
-          if (((unsigned) xp < (unsigned) aew) && mask_pixel != 255) {
-            improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
+          if (((unsigned) xp < (unsigned) aew)) {
+            int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+            if (mask_pixel != 255) {
+              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
+            }
           }
         }
 
         if ((unsigned) (ay - ychange) < (unsigned) aeh) {
           int vp = (*ann)[ay-ychange][ax];
           int xp = INT_TO_X(vp), yp = INT_TO_Y(vp) + ychange;
-          int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
-          if (((unsigned) yp < (unsigned) aeh) && mask_pixel != 255) {
-            improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
+
+          if (((unsigned) yp < (unsigned) aeh)) {
+            int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
+            if (mask_pixel != 255) {
+              improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
+            }
           }
         }
 
