@@ -290,8 +290,13 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
           cout << "Something wrong in constraint map " << endl;
           exit(1);
         }
+        //int debug_shit = 0;
         while (!valid) {
+          //debug_shit++;
+          //cout << "debug index " << debug_shit <<endl;
+          //cout << "got->second.size() " << got->second.size() <<endl;
           int rand_index = rand() % got->second.size();
+          //cout << "rand index " << rand_index <<endl;
           bx = got->second[rand_index].first;
           by = got->second[rand_index].second;
           int mask_pixel = (int) dilated_mask.at<uchar>(by, bx);
@@ -351,11 +356,11 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
             int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
             if (mask_pixel != 255) {
               int new_const_pixel = (int) constraint.at<uchar>(yp, xp);
-              if (const_pixel == 0) {
+              //if (const_pixel == 0) {
                 improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
-              } else if (const_pixel == new_const_pixel) {
-                improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
-              }
+              //} else if (const_pixel == new_const_pixel) {
+              //  improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
+              //}
             }
           }
         }
@@ -368,17 +373,17 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
             int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
             if (mask_pixel != 255) {
               int new_const_pixel = (int) constraint.at<uchar>(yp, xp);
-              if (const_pixel == 0) {
+              //if (const_pixel == 0) {
                 improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
-              } else if (const_pixel == new_const_pixel) {
-                improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
-              }
+              //} else if (const_pixel == new_const_pixel) {
+              //  improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
+              //}
             }
           }
         }
 
         /* Random search: Improve current guess by searching in boxes of exponentially decreasing size around the current best guess. */
-        if (const_pixel == 0) {
+        //if (const_pixel == 0) {
           int rs_start = rs_max;
           if (rs_start > MAX(b.cols, b.rows)) { rs_start = MAX(b.cols, b.rows); }
           for (int mag = rs_start; mag >= 1; mag /= 2) {
@@ -396,7 +401,7 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
               }
             } while (!do_improve);
           }
-        } else {
+        /*} else {
           got = cmap->constraint_map.find(const_pixel);
           // we choose the improve times to be sqrt of the size
           int improve_times = (int) ceil(sqrt(got->second.size()));
@@ -414,8 +419,8 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
                 do_improve = true;
               }
             } while (!do_improve);
-          }
-        }
+          }*/
+        //}
 
         (*ann)[ay][ax] = XY_TO_INT(xbest, ybest);
         (*annd)[ay][ax] = dbest;
@@ -440,8 +445,8 @@ void image_complete(Mat im_orig, Mat mask, Mat constraint) {
   // some parameters for scaling
   int rows = im_orig.rows;
   int cols = im_orig.cols;
-  int startscale = (int) -1*ceil(log2(MIN(rows, cols))) + 5;
-  //int startscale = -3;
+  //int startscale = (int) -1*ceil(log2(MIN(rows, cols))) + 5;
+  int startscale = -3;
   double scale = pow(2, startscale);
 
   cout << "Scaling image by " << scale << endl;
