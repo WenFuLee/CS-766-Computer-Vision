@@ -59,55 +59,6 @@ class BITMAP { public:
 };
 
 
-BITMAP *load_bitmap(const char *filename) {
-  char rawname[256], txtname[256];
-  strcpy(rawname, filename);
-  strcpy(txtname, filename);
-  if (!strstr(rawname, ".")) { fprintf(stderr, "Error reading image '%s': no extension found\n", filename); exit(1); }
-  sprintf(strstr(rawname, "."), ".raw");
-  sprintf(strstr(txtname, "."), ".txt");
-  char buf[256];
-  sprintf(buf, "convert %s rgba:%s", filename, rawname);
-  if (system(buf) != 0) { fprintf(stderr, "Error reading image '%s': ImageMagick convert gave an error\n", filename); exit(1); }
-  sprintf(buf, "identify -format \"%%w %%h\" %s > %s", filename, txtname);
-  if (system(buf) != 0) { fprintf(stderr, "Error reading image '%s': ImageMagick identify gave an error\n", filename); exit(1); }
-  FILE *f = fopen(txtname, "rt");
-  if (!f) { fprintf(stderr, "Error reading image '%s': could not read output of ImageMagick identify\n", filename); exit(1); }
-  int w = 0, h = 0;
-  if (fscanf(f, "%d %d", &w, &h) != 2) { fprintf(stderr, "Error reading image '%s': could not get size from ImageMagick identify\n", filename); exit(1); }
-  fclose(f);
-  printf("(w, h) = (%d, %d)\n", w, h);
-  f = fopen(rawname, "rb");
-  BITMAP *ans = new BITMAP(w, h);
-  unsigned char *p = (unsigned char *) ans->data;
-  for (int i = 0; i < w*h*4; i++) {
-    int ch = fgetc(f);
-    if (ch == EOF) { fprintf(stderr, "Error reading image '%s': raw file is smaller than expected size %dx%dx%d\n", filename, w, h, 4); exit(1); }
-    *p++ = ch;
-  }
-  fclose(f);
-  return ans;
-}
-
-void save_bitmap(BITMAP *bmp, const char *filename) {
-  char rawname[256];
-  strcpy(rawname, filename);
-  if (!strstr(rawname, ".")) { fprintf(stderr, "Error writing image '%s': no extension found\n", filename); exit(1); }
-  sprintf(strstr(rawname, "."), ".raw");
-  char buf[256];
-  //printf("rawname = %s\n", rawname);
-  FILE *f = fopen(rawname, "wb");
-  if (!f) { fprintf(stderr, "Error writing image '%s': could not open raw temporary file\n", filename); exit(1); }
-  unsigned char *p = (unsigned char *) bmp->data;
-  for (int i = 0; i < bmp->w*bmp->h*4; i++) {
-    fputc(*p++, f);
-  }
-  fclose(f);
-  sprintf(buf, "convert -size %dx%d -depth 8 rgba:%s %s", bmp->w, bmp->h, rawname, filename);
-  //printf("system returned value = %d\n", system(buf));
-  if (system(buf) != 0) { fprintf(stderr, "Error writing image '%s': ImageMagick convert gave an error\n", filename); exit(1); }
-}
-
 // Just a simple struct for Box
 struct Box {
   int xmin, xmax, ymin, ymax;
@@ -194,7 +145,7 @@ Box getBox(Mat mask) {
   ymax = (ymax > mask.rows - patch_w + 1) ? mask.rows - patch_w +1 : ymax;
 
   printf("Hole's bounding box is x (%d, %d), y (%d, %d)\n", xmin, xmax, ymin, ymax);
-  Box box = {.xmin = xmin, .xmax = xmax, .ymin = ymin, .ymax = ymax};
+  Box box = {xmin, xmax, ymin, ymax};
   return box;
 }
 
@@ -356,11 +307,11 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
             int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
             if (mask_pixel != 255) {
               int new_const_pixel = (int) constraint.at<uchar>(yp, xp);
-              //if (const_pixel == 0) {
+              if (const_pixel == 0) {
                 improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
-              //} else if (const_pixel == new_const_pixel) {
-              //  improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
-              //}
+              } else if (const_pixel == new_const_pixel) {
+                improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 0);
+              }
             }
           }
         }
@@ -373,17 +324,17 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
             int mask_pixel = (int) dilated_mask.at<uchar>(yp, xp);
             if (mask_pixel != 255) {
               int new_const_pixel = (int) constraint.at<uchar>(yp, xp);
-              //if (const_pixel == 0) {
+              if (const_pixel == 0) {
                 improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
-              //} else if (const_pixel == new_const_pixel) {
-              //  improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
-              //}
+              } else if (const_pixel == new_const_pixel) {
+                improve_guess(a, b, ax, ay, xbest, ybest, dbest, xp, yp, 1);
+              }
             }
           }
         }
 
         /* Random search: Improve current guess by searching in boxes of exponentially decreasing size around the current best guess. */
-        //if (const_pixel == 0) {
+        if (const_pixel == 0) {
           int rs_start = rs_max;
           if (rs_start > MAX(b.cols, b.rows)) { rs_start = MAX(b.cols, b.rows); }
           for (int mag = rs_start; mag >= 1; mag /= 2) {
@@ -401,7 +352,7 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
               }
             } while (!do_improve);
           }
-        /*} else {
+        } else {
           got = cmap->constraint_map.find(const_pixel);
           // we choose the improve times to be sqrt of the size
           int improve_times = (int) ceil(sqrt(got->second.size()));
@@ -419,8 +370,8 @@ void patchmatch(Mat a, Mat b, BITMAP *&ann, BITMAP *&annd, Mat dilated_mask, Mat
                 do_improve = true;
               }
             } while (!do_improve);
-          }*/
-        //}
+          }
+        }
 
         (*ann)[ay][ax] = XY_TO_INT(xbest, ybest);
         (*annd)[ay][ax] = dbest;
@@ -460,6 +411,11 @@ void image_complete(Mat im_orig, Mat mask, Mat constraint) {
   threshold(resize_mask, resize_mask, 127, 255, 0);
   resize(constraint, resize_constraint, Size(), scale, scale, INTER_NEAREST);
 
+
+  CMap cm, *cm_ptr;
+  cm_ptr = &cm;
+  getCMap(resize_constraint, cm_ptr);
+
   // Random starting guess for inpainted image
   rows = resize_img.rows;
   cols = resize_img.cols;
@@ -473,9 +429,22 @@ void image_complete(Mat im_orig, Mat mask, Mat constraint) {
       // if not black pixel, then means white (1) pixel in mask
       // means hole, thus random init colors in hole
       if (mask_pixel != 0) {
-        resize_img.at<Vec3b>(y, x)[0] = rand() % 256;
-        resize_img.at<Vec3b>(y, x)[1] = rand() % 256;
-        resize_img.at<Vec3b>(y, x)[2] = rand() % 256;
+        int const_pixel = (int) resize_constraint.at<uchar>(y, x);
+        if (const_pixel == 0) {
+          resize_img.at<Vec3b>(y, x)[0] = rand() % 256;
+          resize_img.at<Vec3b>(y, x)[1] = rand() % 256;
+          resize_img.at<Vec3b>(y, x)[2] = rand() % 256;
+        } else {
+          unordered_map<int, vector<pair<int, int> > >::iterator got;
+          got = cm_ptr->constraint_map.find(const_pixel);
+          int rand_index = rand() % got->second.size();
+          int nx = got->second[rand_index].first;
+          int ny = got->second[rand_index].second;
+          Vec3b new_pixel = resize_img.at<Vec3b>(ny, nx);
+          resize_img.at<Vec3b>(y, x)[0] = new_pixel[0];
+          resize_img.at<Vec3b>(y, x)[1] = new_pixel[1];
+          resize_img.at<Vec3b>(y, x)[2] = new_pixel[2];
+        }
       }
     }
   }
@@ -536,7 +505,6 @@ void image_complete(Mat im_orig, Mat mask, Mat constraint) {
       }
     }
 
-
     unordered_map<int, vector<pair<int, int> > >::iterator it;
     for (it = cmap_ptr->constraint_map.begin(); it != cmap_ptr->constraint_map.end(); ++it) {
       for (int i = 0; i < it->second.size(); ++i) {
@@ -554,7 +522,7 @@ void image_complete(Mat im_orig, Mat mask, Mat constraint) {
     ss << index;
     string debug_file = "debug_"  + ss.str() + ".png";
     imwrite(debug_file, resize_img);
-     */
+    */
 
     // iterations of image completion
     int im_iterations = 60;
