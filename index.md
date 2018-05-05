@@ -19,7 +19,7 @@
 3. [PDF Report](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage3/Project%20Stage%203_Report.pdf)
 
 ## PatchMatch Algorithm
-## Image Completion
+## Image Completion Algorithm
 ## Interactive GUI
 ## Simulation Results
 ## Future Work
