@@ -75,7 +75,7 @@
 
 <div>
     <p align="justify">
-    Take Fig7 as example. For each patch in A, we try to find a similar patch in B. In the fist step, we randomly match each patch in A with a patch in B. If we’re lucky, we may get some pairs already similar enough. Then, in the second step, we check if our neighbors can give us a better candidate patch. If it is, we just propagate this benefit, i.e., just update the patch. In the final step, we continue looking for a better patch in our neighborhood in order to get out of a local optimum.
+    Take Fig7 as example. For each patch in A, we try to find a similar patch in B. In the fist step, we randomly match each patch in A with a patch in B. If we’re lucky, we may get some pairs already similar enough. Then, in the second step, we check if our neighbors can give us a better candidate patch. If it is, we just propagate this benefit, i.e., just update the patch. In the final step, we continue looking for a better patch in our neighborhood by random search in order to get out of a local optimum.
     </p>
 </div>
 
