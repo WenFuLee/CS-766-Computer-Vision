@@ -91,7 +91,7 @@
 
 <div>
     <p align="justify">
-    Here is the simulation results (see Fig8). You can see how fast this algorithm is. Even for the first iteration, we can almost reconstruct the image just using pixels from B. Then, after that, each iteration just gets the result sharper and sharper. In addition to subjective evaluation, we also calculate the SNR score, which also shows the final result and the origianl image are very similar.
+    Here is the simulation results (see Fig8). You can see how fast this algorithm is. Even for the first iteration, we can almost reconstruct the image just using pixels from B. Then, after that, each iteration just gets the result sharper and sharper. In addition to the subjective evaluation, we also calculate its SNR score, which is 27.860412 also showing the final result and the origianl image are very similar.
     </p>
 </div>
 
