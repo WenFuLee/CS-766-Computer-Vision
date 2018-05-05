@@ -1,4 +1,4 @@
-## Introduction
+# Introduction
 
 <div>
     <p align="justify">
@@ -15,7 +15,7 @@
     </div>
 </div>
 
-## State-of-the-Art
+# State-of-the-Art
 
 <div>
     <p align="justify">
@@ -43,7 +43,7 @@
     </div>
 </div>
 
-## Adobe Photoshop: Content Aware Fill (PatchMatch)
+# Adobe Photoshop: Content Aware Fill (PatchMatch)
 
 <div>
     <p align="justify">
@@ -89,20 +89,20 @@
 
 ## Simulation Result
 
-## Image Completion Algorithm
-## Interactive GUI
-## Simulation Results
-## Future Work
+# Image Completion Algorithm
+# Interactive GUI
+# Simulation Results
+# Future Work
 1. Adopt KNN rather than the most similar patch
 2. Figure out a way for better initialization
 3. Find how to determine patch size
 4. Speed up our application to real time
 5. Improve the sensitivity issues for initialization and patch size
 
-## Presentation
+# Presentation
 [Slides](https://docs.google.com/presentation/d/1YMoPjG7pNWLSEDjNDadcxzCkqFpysvW_enfNe-DhoVM/edit#slide=id.p1)
 
-## Reference
+# Reference
 1. S. Iizuka, E. Simo-Serra, and H. Ishikawa. Globally and Locally Consistent Image Completion. ACM Transactions on Graphics (Proc. of SIGGRAPH 2017), 36(4):107:1–107:14, 2017.
 2. C. Barnes, E. Shechtman, A. Finkelstein, and D. Goldman. Patchmatch: a randomized correspondence algorithm for structural image editing. TOG, 2009.
 
