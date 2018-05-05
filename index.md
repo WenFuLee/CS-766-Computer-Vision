@@ -8,19 +8,38 @@
 
 <div align="center">
     <div class="img-with-text">
-        <img src="report/image/image1.png" alt="Everyday Photo" class="inline" width="667" height="220"/>
+        <img src="report/image/image1.png" class="inline" width="667" height="220"/>
         <p><b>Figure 1:</b> <i>Everyday Photo</i></p>
-        <img src="report/image/image2.png" alt="Everyday Photo" class="inline" width="554" height="315"/>
+        <img src="report/image/image2.png" class="inline" width="554" height="315"/>
         <p><b>Figure 2:</b> <i>Movie Post-Processing</i></p>
     </div>
 </div>
 
 ## State-of-the-Art
 
+<div>
+    <p align="justify">
+    We survey the literature works. The latest one is from siggraph 2017 (see Fig3), which is based on  deep neural network. 
+    </p>
+</div>
+
 <div align="center">
     <div class="img-with-text">
-        <img src="report/image/image3.png" alt="Everyday Photo" class="inline" width="775" height="266"/>
+        <img src="report/image/image3.png" class="inline" width="775" height="266"/>
         <p><b>Figure 3:</b> <i>Deep convolutional neural networks</i>[1]</p>
+    </div>
+</div>
+
+<div>
+    <p align="justify">
+    Although this work is very powerful, it may still fail in some cases (see Fig4). We also find other problems with this model. Usually, It takes lots of time and images to train a model. Also, it doesn’t provide an interactive way for users to improve results if they are not good enough.
+    </p>
+</div>
+
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/image4.png" class="inline" width="775" height="266"/>
+        <p><b>Figure 3:</b> <i>Failed case in</i>[1]</p>
     </div>
 </div>
 
