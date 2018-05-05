@@ -1,9 +1,11 @@
 ## Introduction
 
+<div>
+    <p align="justify">
+    Image/Video editing tools and applications have been widely used in many areas, including marketing, fashion design, and film production. Among these applications, we are especially interested in Image Completion, and think it is an important function. Why is Image Completion important? Actually, it is very useful for lots of purposes. No matter it’s for everyday photo or movie post-processing, it can help you remove objects you don’t want (see Fig1 and Fig2).
+    </p>
+</div>
 
-Image/Video editing tools and applications have been widely used in many areas, including marketing, fashion design, and film production. Among these applications, we are especially interested in Image Completion, and think it is an important function. Why is Image Completion important? Actually, it is very useful for lots of purposes. No matter it’s for everyday photo or movie post-processing, it can help you remove objects you don’t want (see Fig1 and Fig2).
-
-    
 <div align="center">
     <div class="img-with-text">
         <img src="report/image/image1.png" alt="Everyday Photo" class="inline" width="667" height="220"/>
