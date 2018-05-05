@@ -1,4 +1,4 @@
-## Project Stage 1
+## Introduction
 
 1. [Original documents](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/original)
 2. [Documents with markup](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/marked)<br>- [README](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage1/documents/marked/README): the selected entity type
@@ -8,12 +8,23 @@
 6. [Compressed file, including all the files above](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage1/compressed_files.zip)
 7. [PDF Report](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage1/Project%20Stage%201_Report.pdf)
 
-## Project Stage 2
+## State-of-the-Art
 1. [Data](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage2/data)
 2. [Code](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage2/code)
 3. [PDF Report](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage2/stage2_report.pdf)
 
-## Project Stage 3
+## Adobe Photoshop: Content Aware Fill (PatchMatch)
 1. [Data](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage3/data)<br>- Please check README to see what files to look at
 2. [Code](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage3/code)<br>- Please check README to see what files to look at
 3. [PDF Report](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage3/Project%20Stage%203_Report.pdf)
+
+## PatchMatch Algorithm
+## Image Completion
+## Interactive GUI
+## Simulation Results
+## Future Work
+1. Adopt KNN rather than the most similar patch
+2. Figure out a way for better initialization
+3. Find how to determine patch size
+4. Speed up our application to real time
+5. Improve the sensitivity issues for initialization and patch size
