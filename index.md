@@ -2,6 +2,8 @@
 
 ![alt text](https://github.com/WenFuLee/CS-766-Computer-Vision/blob/master/report/image/image1.png "Everyday Photo")
 
+<img src="report/image/image1.png" alt="Everyday Photo" class="inline"/>
+
 1. [Original documents](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/original)
 2. [Documents with markup](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/marked)<br>- [README](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage1/documents/marked/README): the selected entity type
 3. [Documents in set I](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/set_I)
