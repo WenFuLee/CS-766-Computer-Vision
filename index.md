@@ -82,7 +82,7 @@
 
 <div align="center">
     <div class="img-with-text">
-        <img src="report/image/image7.png" class="inline" width="947" height="465"/>
+        <img src="report/image/image7.png" class="inline" width="900" height="442"/>
         <p><b>Figure 7:</b> <i>Example of PatchMatch Algorithm</i></p>
     </div>
 </div>
@@ -97,7 +97,7 @@
 
 <div align="center">
     <div class="img-with-text">
-        <img src="report/image/image8.png" class="inline" width="932" height="342"/>
+        <img src="report/image/image8.png" class="inline" width="900" height="330"/>
         <p><b>Figure 8:</b> <i>Simulation Results of Different Iterations</i></p>
     </div>
 </div>
