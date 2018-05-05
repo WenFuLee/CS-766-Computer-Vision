@@ -29,5 +29,5 @@
 4. Speed up our application to real time
 5. Improve the sensitivity issues for initialization and patch size
 
-## Presentation slides
-https://docs.google.com/presentation/d/1YMoPjG7pNWLSEDjNDadcxzCkqFpysvW_enfNe-DhoVM/edit#slide=id.p1
+## Presentation
+[Slides] (https://docs.google.com/presentation/d/1YMoPjG7pNWLSEDjNDadcxzCkqFpysvW_enfNe-DhoVM/edit#slide=id.p1)
