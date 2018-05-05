@@ -19,8 +19,8 @@
 
 <div align="center">
     <div class="img-with-text">
-        <img src="report/image/image3.png" alt="Everyday Photo" class="inline" width="959" height="332"/>
-        <p><b>Figure 3:</b> <i>Deep convolutional neural networks [1]</i></p>
+        <img src="report/image/image3.png" alt="Everyday Photo" class="inline" width="775" height="266"/>
+        <p><b>Figure 3:</b> <i>Deep convolutional neural networks</i>[1]</p>
     </div>
 </div>
 
