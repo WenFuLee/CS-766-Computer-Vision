@@ -1,5 +1,7 @@
 ## Introduction
 
+Image/Video editing tools and applications have been widely used in many areas, including marketing, fashion design, and film production. Among these applications, we are especially interested in Image Completion, and think it is an important function. Why is Image Completion important? Actually, it is very useful for lots of purposes. No matter it’s for everyday photo or movie post-processing, it can help you remove objects you don’t want (see Fig1 and Fig2).
+
 <div align="center">
     <div class="img-with-text">
         <img src="report/image/image1.png" alt="Everyday Photo" class="inline" width="667" height="220"/>
@@ -8,16 +10,6 @@
         <p><b>Figure 2:</b> <i>Movie Post-Processing</i></p>
     </div>
 </div>
-
-Image/Video editing tools and applications have been widely used in many areas, including marketing, fashion design, and film production. Among these applications, we are especially interested in Image Completion, and think it is an important function. Why is image completion important? Actually, it is very useful for lots of purposes. No matter it’s for everyday photo or movie post-processing, it can help you remove objects you don’t want (see Fig1 and Fig2).
-
-1. [Original documents](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/original)
-2. [Documents with markup](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/marked)<br>- [README](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage1/documents/marked/README): the selected entity type
-3. [Documents in set I](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/set_I)
-4. [Documents in set J](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/set_J)
-5. [Code](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/code)
-6. [Compressed file, including all the files above](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage1/compressed_files.zip)
-7. [PDF Report](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage1/Project%20Stage%201_Report.pdf)
 
 ## State-of-the-Art
 1. [Data](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage2/data)
@@ -42,3 +34,13 @@ Image/Video editing tools and applications have been widely used in many areas, 
 
 ## Presentation
 [Slides](https://docs.google.com/presentation/d/1YMoPjG7pNWLSEDjNDadcxzCkqFpysvW_enfNe-DhoVM/edit#slide=id.p1)
+
+
+1. [Original documents](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/original)
+2. [Documents with markup](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/marked)<br>- [README](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage1/documents/marked/README): the selected entity type
+3. [Documents in set I](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/set_I)
+4. [Documents in set J](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/set_J)
+5. [Code](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/code)
+6. [Compressed file, including all the files above](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage1/compressed_files.zip)
+7. [PDF Report](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage1/Project%20Stage%201_Report.pdf)
+
