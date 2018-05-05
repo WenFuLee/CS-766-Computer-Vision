@@ -58,7 +58,8 @@
     </div>
 </div>
 
-## PatchMatch Algorithm
+# PatchMatch 
+## Algorithm
 
 <div>
     <p align="justify">
@@ -85,6 +86,8 @@
         <p><b>Figure 7:</b> <i>Example of PatchMatch Algorithm</i></p>
     </div>
 </div>
+
+## Simulation Result
 
 ## Image Completion Algorithm
 ## Interactive GUI
