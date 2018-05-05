@@ -4,6 +4,8 @@
     <div class="img-with-text">
         <img src="report/image/image1.png" alt="Everyday Photo" class="inline"/>
         <p><b>Figure 1:</b> <i>Everyday Photo</i></p>
+        <img src="report/image/image2.png" alt="Everyday Photo" class="inline"/>
+        <p><b>Figure 2:</b> <i>Movie Post-Processing</i></p>
     </div>
 </div>
 
