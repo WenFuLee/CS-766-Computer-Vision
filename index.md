@@ -73,6 +73,18 @@
     </div>
 </div>
 
+<div>
+    <p align="justify">
+    Take Fig7 as example. For each patch in A, we try to find a similar patch in B. In the fist step, we randomly match each patch in A with a patch in B. If we’re lucky, we may get some pairs already similar enough. Then, in the second step, we propagate the benefit. We check if our neighbors can give us a better candidate patch. If it is, we just update the patch. In the final step, we continue looking for a better patch in our neighborhood in order to get out of a local optimum.
+    </p>
+</div>
+
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/image7.png" class="inline" width="947" height="465"/>
+        <p><b>Figure 7:</b> <i>Example for PatchMatch Algorithm</i></p>
+    </div>
+</div>
 
 ## Image Completion Algorithm
 ## Interactive GUI
