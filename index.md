@@ -53,7 +53,7 @@
 
 <div align="center">
     <div class="img-with-text">
-        <img src="report/image/image5.png" class="inline" width="667" height="220"/>
+        <img src="report/image/image5.png" class="inline" width="1311" height="631"/>
         <p><b>Figure 5:</b> <i>Adobe Photoshop: Content Aware Fill</i></p>
     </div>
 </div>
