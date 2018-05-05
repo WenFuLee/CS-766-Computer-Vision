@@ -82,7 +82,7 @@
 <div align="center">
     <div class="img-with-text">
         <img src="report/image/image7.png" class="inline" width="947" height="465"/>
-        <p><b>Figure 7:</b> <i>Example for PatchMatch Algorithm</i></p>
+        <p><b>Figure 7:</b> <i>Example of PatchMatch Algorithm</i></p>
     </div>
 </div>
 
