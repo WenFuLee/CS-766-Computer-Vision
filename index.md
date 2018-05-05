@@ -59,6 +59,21 @@
 </div>
 
 ## PatchMatch Algorithm
+
+<div>
+    <p align="justify">
+    The purpose of the PatchMatch algorithm is to efficiently find the similar patches between two images. Basically, its algorithm contains three steps: random initlization, propagation, and random search (see Fig6).
+    </p>
+</div>
+
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/image6.png" class="inline" width="775" height="533"/>
+        <p><b>Figure 6:</b> <i>PatchMatch Algorithm</i></p>
+    </div>
+</div>
+
+
 ## Image Completion Algorithm
 ## Interactive GUI
 ## Simulation Results
