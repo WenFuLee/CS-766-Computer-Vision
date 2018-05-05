@@ -1,8 +1,10 @@
 ## Introduction
 
 <div class="img-with-text">
-    <img src="report/image/image1.png" alt="Everyday Photo" class="inline"/>
-    <p>Everyday Photo</p>
+    <div class="centered">Centered</div>
+        <img src="report/image/image1.png" alt="Everyday Photo" class="inline"/>
+        <p>Fig1: Everyday Photo</p>
+    </div>
 </div>
 
 1. [Original documents](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/original)
