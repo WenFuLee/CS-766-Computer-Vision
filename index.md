@@ -97,8 +97,8 @@
 
 <div align="center">
     <div class="img-with-text">
-        <img src="report/image/image8.png" class="inline" width="932" height="342"/>
-        <p><b>Figure 8:</b> <i>Simulation Results of Different Iterations</i></p>
+        <img src="report/image/image9.png" class="inline" width="667" height="146"/>
+        <p><b>Figure 9:</b> <i>SNR Formula and ISO 12232 Criteria</i></p>
     </div>
 </div>
 
