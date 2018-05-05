@@ -1,9 +1,9 @@
 ## Introduction
 
 <div class="img-with-text">
-    <div class="centered">Centered</div>
+    <div class="centered">
         <img src="report/image/image1.png" alt="Everyday Photo" class="inline"/>
-        <p>Fig1: Everyday Photo</p>
+        <p>Figure 1: Everyday Photo</p>
     </div>
 </div>
 
