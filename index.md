@@ -44,9 +44,21 @@
 </div>
 
 ## Adobe Photoshop: Content Aware Fill (PatchMatch)
-1. [Data](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage3/data)<br>- Please check README to see what files to look at
-2. [Code](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage3/code)<br>- Please check README to see what files to look at
-3. [PDF Report](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage3/Project%20Stage%203_Report.pdf)
+
+<div>
+    <p align="justify">
+    Thus, we’re more interested in what’s the industry solution for this problem since we usually ask for a higher standard of image quality provided by those market products. We find that Adobe Photoshop also has this function which is called Content Aware Fill (see Fig5) using PatchMatch algorithm [2]. So, we try to find some insights from this algorithm.
+    </p>
+</div>
+
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/image1.png" class="inline" width="667" height="220"/>
+        <p><b>Figure 1:</b> <i>Everyday Photo</i></p>
+        <img src="report/image/image2.png" class="inline" width="554" height="315"/>
+        <p><b>Figure 2:</b> <i>Movie Post-Processing</i></p>
+    </div>
+</div>
 
 ## PatchMatch Algorithm
 ## Image Completion Algorithm
@@ -64,6 +76,7 @@
 
 ## Reference
 1. S. Iizuka, E. Simo-Serra, and H. Ishikawa. Globally and Locally Consistent Image Completion. ACM Transactions on Graphics (Proc. of SIGGRAPH 2017), 36(4):107:1–107:14, 2017.
+2. C. Barnes, E. Shechtman, A. Finkelstein, and D. Goldman. Patchmatch: a randomized correspondence algorithm for structural image editing. TOG, 2009.
 
 ## Tmp
 1. [Original documents](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/original)
@@ -78,3 +91,7 @@
 2. [Code](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage2/code)
 3. [PDF Report](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage2/stage2_report.pdf)
 
+
+1. [Data](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage3/data)<br>- Please check README to see what files to look at
+2. [Code](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage3/code)<br>- Please check README to see what files to look at
+3. [PDF Report](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage3/Project%20Stage%203_Report.pdf)
