@@ -89,6 +89,19 @@
 
 ## Simulation Result
 
+<div>
+    <p align="justify">
+    Here is the simulation results (see Fig8). You can see how fast this algorithm is. Even for the first iteration, we can almost reconstruct the image just using pixels from B. Then, after that, each iteration just gets the result sharper and sharper. In addition to subjective evaluation, we also calculate the SNR score, which also shows the final result and the origianl image are very similar.
+    </p>
+</div>
+
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/image8.png" class="inline" width="932" height="342"/>
+        <p><b>Figure 8:</b> <i>Simulation Results of Different Iterations</i></p>
+    </div>
+</div>
+
 # Image Completion Algorithm
 # Interactive GUI
 # Simulation Results
