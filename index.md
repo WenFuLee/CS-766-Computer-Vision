@@ -1,7 +1,7 @@
 ## Introduction
 
-<div class="img-with-text">
-    <div class="centered">
+<div align="center">
+    <div class="img-with-text">
         <img src="report/image/image1.png" alt="Everyday Photo" class="inline"/>
         <p>Figure 1: Everyday Photo</p>
     </div>
