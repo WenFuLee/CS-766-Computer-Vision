@@ -68,7 +68,7 @@
 
 <div align="center">
     <div class="img-with-text">
-        <img src="report/image/image6.png" class="inline" width="775" height="533"/>
+        <img src="report/image/image6.png" class="inline" width="620" height="426"/>
         <p><b>Figure 6:</b> <i>PatchMatch Algorithm</i></p>
     </div>
 </div>
