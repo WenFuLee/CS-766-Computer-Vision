@@ -16,6 +16,14 @@
 </div>
 
 ## State-of-the-Art
+
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/image3.png" alt="Everyday Photo" class="inline" width="959" height="332"/>
+        <p><b>Figure 3:</b> <i>Deep convolutional neural networks [1]</i></p>
+    </div>
+</div>
+
 1. [Data](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage2/data)
 2. [Code](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage2/code)
 3. [PDF Report](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage2/stage2_report.pdf)
@@ -39,7 +47,10 @@
 ## Presentation
 [Slides](https://docs.google.com/presentation/d/1YMoPjG7pNWLSEDjNDadcxzCkqFpysvW_enfNe-DhoVM/edit#slide=id.p1)
 
+## Reference
+1. S. Iizuka, E. Simo-Serra, and H. Ishikawa. Globally and Locally Consistent Image Completion. ACM Transactions on Graphics (Proc. of SIGGRAPH 2017), 36(4):107:1–107:14, 2017.
 
+## Tmp
 1. [Original documents](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/original)
 2. [Documents with markup](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/marked)<br>- [README](https://github.com/WenFuLee/CS-839-Data-Science/blob/master/stage1/documents/marked/README): the selected entity type
 3. [Documents in set I](https://github.com/WenFuLee/CS-839-Data-Science/tree/master/stage1/documents/set_I)
