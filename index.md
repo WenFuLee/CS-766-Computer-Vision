@@ -3,7 +3,7 @@
 <div align="center">
     <div class="img-with-text">
         <img src="report/image/image1.png" alt="Everyday Photo" class="inline"/>
-        <p>Figure 1: Everyday Photo</p>
+        <p><b>Figure 1:</b> <i>Everyday Photo</i></p>
     </div>
 </div>
 
