@@ -19,7 +19,7 @@
 
 <div>
     <p align="justify">
-    We survey the literature works. The latest one is from siggraph 2017 (see Fig3), which is based on  deep neural network. 
+    We survey the literature works. The latest one is from SIGGRAPH 2017 (see Fig3), which is based on  deep neural network. 
     </p>
 </div>
 
@@ -39,7 +39,7 @@
 <div align="center">
     <div class="img-with-text">
         <img src="report/image/image4.png" class="inline" width="775" height="266"/>
-        <p><b>Figure 3:</b> <i>Failed case in</i> [1]</p>
+        <p><b>Figure 4:</b> <i>Failed case in</i> [1]</p>
     </div>
 </div>
 
