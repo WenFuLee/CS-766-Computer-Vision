@@ -19,7 +19,7 @@
 
 <div>
     <p align="justify">
-    We survey the literature works. The latest one is from SIGGRAPH 2017 (see Fig3), which is based on  deep neural network. 
+    We survey the literature works. The latest one is from SIGGRAPH 2017 (see Fig3), which is based on deep neural network. 
     </p>
 </div>
 
@@ -104,7 +104,7 @@
 
 <div>
     <p align="justify">
-    In addition to the subjective evaluation, we also calculate its SNR score, which shows how similar two images look like. According to the SNR formula below, we calculate 27.860412 as the SNR score, which also shows that the origianl image and the final result are very similar based on the criteria of ISO 12232: Electronic Still Picture Cameras.
+    In addition to the subjective evaluation, we also calculate its SNR score, which shows how similar two images look like. According to the SNR formula below, we calculate 27.860412 as the SNR score, which also shows that the original image and the final result are very similar based on the criteria of ISO 12232: Electronic Still Picture Cameras.
     </p>
 </div>
 
@@ -117,10 +117,15 @@
 
 # Image Completion Algorithm
 # Interactive GUI
+<div>
+    <p align="justify">
+    We designed an interactive GUI for end users. User can load an image and mask for that image. Then he/she can introduce some contraints to maintain some boundaries. Using our imterative interface user can improve the performance of image completion. For a short demonstraion please watch the video below.         
+    </p>
+</div>
+
 <div align="center">
         <a href="https://www.youtube.com/watch?v=cyoWTjSp_-Y"><img src="https://img.youtube.com/vi/cyoWTjSp_-Y/0.jpg"></a>
 </div>
-
 
 # Simulation Results
 # Future Work
