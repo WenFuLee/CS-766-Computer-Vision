@@ -117,9 +117,9 @@
 
 # Image Completion Algorithm
 # Interactive GUI
-<p align="center">
-        [![](https://img.youtube.com/vi/cyoWTjSp_-Y/0.jpg)](https://www.youtube.com/watch?v=cyoWTjSp_-Y)
-</p>
+<div align="center">
+        <a href="https://www.youtube.com/watch?v=cyoWTjSp_-Y"><img src="https://img.youtube.com/vi/cyoWTjSp_-Y/0.jpg"></a>
+</div>
 
 
 # Simulation Results
