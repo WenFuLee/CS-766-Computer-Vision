@@ -119,7 +119,7 @@
 # Interactive GUI
 <div align="center">
     <div class="img-with-text">
-        [<img src="https://img.youtube.com/vi/cyoWTjSp_-Y/0.jpg")>](https://www.youtube.com/watch?v=cyoWTjSp_-Y)
+        <img src="https://img.youtube.com/vi/cyoWTjSp_-Y/0.jpg")>(https://www.youtube.com/watch?v=cyoWTjSp_-Y)
     </div>
 </div>
 # Simulation Results
