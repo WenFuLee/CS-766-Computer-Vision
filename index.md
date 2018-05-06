@@ -119,7 +119,7 @@
 # Interactive GUI
 <div>
     <p align="justify">
-    We designed an interactive GUI for end users. User can load an image and mask for that image. Then he/she can introduce some contraints to maintain some boundaries. Using our imterative interface user can improve the performance of image completion. For a short demonstraion please watch the video below.         
+    We designed an interactive GUI for end users. User can load an image and mask for that image. Then he/she can introduce some contraints to maintain some boundaries and let the algorithm to complete the hole in the image. Using our imterative interface user can improve the performance of image completion. For a short demonstraion please watch the video below.         
     </p>
 </div>
 
