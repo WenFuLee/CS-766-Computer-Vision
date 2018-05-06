@@ -117,7 +117,12 @@
 
 # Image Completion Algorithm
 # Interactive GUI
-[![ASD](https://img.youtube.com/vi/cyoWTjSp_-Y/0.jpg)](https://www.youtube.com/watch?v=cyoWTjSp_-Y)
+<div align="center">
+    <div class="img-with-text">
+        [![](https://img.youtube.com/vi/cyoWTjSp_-Y/0.jpg)](https://www.youtube.com/watch?v=cyoWTjSp_-Y)
+    </div>
+</div>
+
 
 # Simulation Results
 # Future Work
