@@ -127,7 +127,35 @@
         <a href="https://www.youtube.com/watch?v=cyoWTjSp_-Y"><img src="https://img.youtube.com/vi/cyoWTjSp_-Y/0.jpg"></a>
 </div>
 
-# Simulation Results
+# Image Completion Results
+
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/image9.png" class="inline" width="667" height="146"/>
+        <p><b>Figure 9:</b> <i>SNR Formula and ISO 12232 Criteria</i></p>
+    </div>
+</div>
+
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/image9.png" class="inline" width="667" height="146"/>
+        <p><b>Figure 9:</b> <i>SNR Formula and ISO 12232 Criteria</i></p>
+    </div>
+</div>
+
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/image9.png" class="inline" width="667" height="146"/>
+        <p><b>Figure 9:</b> <i>SNR Formula and ISO 12232 Criteria</i></p>
+    </div>
+</div>
+
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/image9.png" class="inline" width="667" height="146"/>
+        <p><b>Figure 9:</b> <i>SNR Formula and ISO 12232 Criteria</i></p>
+    </div>
+</div>
 # Future Work
 1. Adopt KNN rather than the most similar patch
 2. Figure out a way for better initialization
