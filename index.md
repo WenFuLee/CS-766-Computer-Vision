@@ -117,6 +117,11 @@
 
 # Image Completion Algorithm
 # Interactive GUI
+<div align="center">
+    <div class="img-with-text">
+        [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/cyoWTjSp_-Y/0.jpg)](https://www.youtube.com/watch?v=cyoWTjSp_-Y)
+    </div>
+</div>
 # Simulation Results
 # Future Work
 1. Adopt KNN rather than the most similar patch
