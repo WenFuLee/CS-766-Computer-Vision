@@ -166,7 +166,7 @@
 # Presentation
 [Slides](https://docs.google.com/presentation/d/1YMoPjG7pNWLSEDjNDadcxzCkqFpysvW_enfNe-DhoVM/edit#slide=id.p1)
 
-#Source Code
+# Source Code
 [Code](https://github.com/WenFuLee/CS-766-Computer-Vision)
 
 # Reference
