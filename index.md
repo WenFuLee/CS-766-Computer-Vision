@@ -116,7 +116,7 @@
 </div>
 
 # Image Completion
-##Task Definition
+## Task Definition
 <div>
     <p align="justify">
         Image completion/inpainting is used when there is corrupted or unwanted region in image and we want to fill those region with
@@ -131,7 +131,7 @@
     </div>
 </div>
 
-##First try
+## First try
 <div>
     <p align="justify">
         To use patchmatch for image completion, we come up with this straight forward method.
@@ -153,10 +153,10 @@
     </div>
 </div>
 
-##What's the problem?
+## What's the problem?
 <div>
     <p align="justify">
-        We can observe that there are some blurred region of the result in Figure 11. It is because the nearby pixels in the
+        We can observe that there are some blurred region of the result in Figure 12. It is because the nearby pixels in the
         missing region are not finding coherent nearest neighbor patches. When those patches voting for the pixel, they give
         different votes and averaging them yields blur region.
     </p>
@@ -169,7 +169,7 @@
     </p>
 </div>
 
-##Multi-Scale Image Completion
+## Multi-Scale Image Completion
 <div>
     <p align="justify">
         We use multi-scale image completion, as described in [3].
@@ -191,7 +191,7 @@
         <p><b>Figure 14:</b> <i>Result of Multi-Scale Image Completion</i></p>
 </div>
 
-##Incorporating Constraints
+## Incorporating Constraints
 <div>
     <p align="justify">
         However, sometimes it still produce images with artifacts, like the left image of Figure 17.
@@ -270,5 +270,7 @@
 [Code](https://github.com/WenFuLee/CS-766-Computer-Vision)
 
 # Reference
-1. S. Iizuka, E. Simo-Serra, and H. Ishikawa. Globally and Locally Consistent Image Completion. ACM Transactions on Graphics (Proc. of SIGGRAPH 2017), 36(4):107:1–107:14, 2017.
-2. C. Barnes, E. Shechtman, A. Finkelstein, and D. Goldman. Patchmatch: a randomized correspondence algorithm for structural image editing. TOG, 2009.
+1. Iizuka, S., Simo-Serra, E., & Ishikawa, H. (2017). Globally and locally consistent image completion. ACM Transactions on Graphics (TOG), 36(4), 107.
+2. Barnes, C., Shechtman, E., Finkelstein, A., & Goldman, D. B. (2009). PatchMatch: A randomized correspondence algorithm for structural image editing. ACM Transactions on Graphics-TOG, 28(3), 24.
+3. Wexler, Y., Shechtman, E., & Irani, M. (2007). Space-time completion of video. IEEE Transactions on pattern analysis and machine intelligence, 29(3).
+4. Hays, J., & Efros, A. A. (2007, August). Scene completion using millions of photographs. In ACM Transactions on Graphics (TOG) (Vol. 26, No. 3, p. 4). ACM.
