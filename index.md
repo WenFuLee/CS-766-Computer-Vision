@@ -189,6 +189,7 @@
     <div class="img-with-text">
         <img src="report/image/multi_result.png" class="inline"/>
         <p><b>Figure 14:</b> <i>Result of Multi-Scale Image Completion</i></p>
+    </div>
 </div>
 
 ## Incorporating Constraints
@@ -203,6 +204,7 @@
     <div class="img-with-text">
         <img src="report/image/man_dog.png" class="inline"/>
         <p><b>Figure 15:</b> <i>Man and dog image</i></p>
+    </div>
 </div>
 <div align="center">
     <div class="img-with-text">
@@ -214,6 +216,7 @@
     <div class="img-with-text">
         <img src="report/image/constraint_result.png" class="inline"/>
         <p><b>Figure 17:</b> <i>Image completion result of man and dog</i></p>
+    </div>
 </div>
 
 # Interactive GUI
