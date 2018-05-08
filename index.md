@@ -115,7 +115,107 @@
     </div>
 </div>
 
-# Image Completion Algorithm
+# Image Completion
+##Task Definition
+<div>
+    <p align="justify">
+        Image completion/inpainting is used when there is corrupted or unwanted region in image and we want to fill those region with
+        pixels that are coherent with the background. Below is an illustration, say we want to remove the cow in the image, we will
+        done that by remove the cow from image and try to complete it.
+    </p>
+</div>
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/task_def.png" class="inline"/>
+        <p><b>Figure 10:</b> <i>Image Completion Task Definition</i></p>
+    </div>
+</div>
+
+##First try
+<div>
+    <p align="justify">
+        To use patchmatch for image completion, we come up with this straight forward method.
+        First, find a bounding box of the missing region.
+        Then for each patch in the bounding box, we try to find the nearest patch outside the bounding box use PatchMatch.
+        Finally, we just use those nearest patches to vote for the pixel value inside the missing region.
+    </p>
+</div>
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/first_try.png" class="inline"/>
+        <p><b>Figure 11:</b> <i>Algorithm of First Try</i></p>
+    </div>
+</div>
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/first_result.png" class="inline"/>
+        <p><b>Figure 12:</b> <i>Result of First Try</i></p>
+    </div>
+</div>
+
+##What's the problem?
+<div>
+    <p align="justify">
+        We can observe that there are some blurred region of the result in Figure 11. It is because the nearby pixels in the
+        missing region are not finding coherent nearest neighbor patches. When those patches voting for the pixel, they give
+        different votes and averaging them yields blur region.
+    </p>
+    <p align="justify">
+        So how can we find better nearest neighbor patches?
+        Turns out that we want patch size to be large enough in the first hand to see the global picture of the image.
+        Meanwhile, we also want it to become small enough in the end so that our algithm can be aware of local structure
+        and produce sharp image. The answer to that is adaptive patch size, or we can done that by fix patch size and varying
+        the image size in multiple scale.
+    </p>
+</div>
+
+##Multi-Scale Image Completion
+<div>
+    <p align="justify">
+        We use multi-scale image completion, as described in [3].
+        We start from the smallest scale, do image completion at that scale, then keep scaling up until we meet the original scale.
+        In each scale change, for the pixels outside the missing region, we simply scale down the original image to that scale;
+        for the pixels inside the missing region, we scale up the filled region as initialization of next scale.
+    </p>
+</div>
+
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/multi_algo.png" class="inline"/>
+        <p><b>Figure 13:</b> <i>Algorithm of Multi-Scale Image Completion</i></p>
+    </div>
+</div>
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/multi_result.png" class="inline"/>
+        <p><b>Figure 14:</b> <i>Result of Multi-Scale Image Completion</i></p>
+</div>
+
+##Incorporating Constraints
+<div>
+    <p align="justify">
+        However, sometimes it still produce images with artifacts, like the left image of Figure 17.
+        Luckily, there is a solution. We follow [1] to incorporate user-specified constraints to enhance the completion result.
+        To do that, we simply restrict the constrained pixels in missing region to search for patches that are of same constraint.
+    </p>
+</div>
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/man_dog.png" class="inline"/>
+        <p><b>Figure 15:</b> <i>Man and dog image</i></p>
+</div>
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/constraint_illu.png" class="inline"/>
+        <p><b>Figure 16:</b> <i>User-specified constraint</i></p>
+    </div>
+</div>
+<div align="center">
+    <div class="img-with-text">
+        <img src="report/image/constraint_result.png" class="inline"/>
+        <p><b>Figure 17:</b> <i>Image completion result of man and dog</i></p>
+</div>
+
 # Interactive GUI
 <div>
     <p align="justify">
