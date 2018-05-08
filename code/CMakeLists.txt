@@ -1,0 +1,7 @@
+SET(OpenCV_DIR ~/opencv-3.4.1/build)
+cmake_minimum_required(VERSION 2.8)
+project( ImageComplete )
+find_package( OpenCV REQUIRED )
+add_executable( ImageComplete im_complete_opencv_constraint.cpp )
+target_link_libraries( ImageComplete ${OpenCV_LIBS} )
+set(CMAKE_CXX_FLAGS "-O6 -std=c++11 -Wall -ffast-math -msse2")
